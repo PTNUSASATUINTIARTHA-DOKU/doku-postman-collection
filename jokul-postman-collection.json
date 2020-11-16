@@ -1,0 +1,820 @@
+{
+	"info": {
+		"_postman_id": "6edd2af4-2943-467e-b7fb-86accc4e8e06",
+		"name": "Jokul API Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Jokul Direct",
+			"item": [
+				{
+					"name": "Credit Card",
+					"item": [
+						{
+							"name": "Generate Payment URL",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "6545abd4-2716-4d5c-b97d-21334a8cddbc",
+										"exec": [
+											"var client_id = pm.variables.get(\"client_id\");",
+											"var key = pm.variables.get(\"secret_key\");",
+											"var req_id = _.random(1, 100000);",
+											"var dateFormat = new Date().toISOString().slice(0, 19)+\"Z\";",
+											"var targetPath = \"/credit-card/v1/payment-page\";",
+											"",
+											"function generatePayCodeSignature(jsonBody, key, client, req, tgl, target) {",
+											"var body = (jsonBody.raw);",
+											"var bodySha256 = CryptoJS.enc.Base64.stringify(CryptoJS.SHA256(body));",
+											"var signatureComponents = ",
+											"\"Client-Id:\"+client+\"\\n\"",
+											"+\"Request-Id:\"+req+\"\\n\"",
+											"+\"Request-Timestamp:\"+tgl+\"\\n\"",
+											"+\"Request-Target:\"+target+\"\\n\"",
+											"+\"Digest:\"+ bodySha256;",
+											"var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(signatureComponents,key));",
+											"console.log('body : \\n' + body);",
+											"console.log('Digest : '+ bodySha256);",
+											"console.log('UTC : ' +tgl);",
+											"console.log('Komponen signature : \\n' + signatureComponents);",
+											"console.log('Signature : ' + signature);",
+											"return (signature);",
+											"}",
+											"",
+											"var Header = require('postman-collection').Header",
+											"pm.request.headers.add({key : 'Signature', value :\"HMACSHA256=\"+generatePayCodeSignature(pm.request.body, key, client_id, req_id, dateFormat, targetPath)});",
+											"pm.request.headers.add({key : 'Request-Id', value : req_id});",
+											"pm.request.headers.add({key : 'Client-Id', value : client_id});",
+											"pm.request.headers.add({key : 'Request-Timestamp', value : dateFormat});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"accept-encoding": true,
+									"connection": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"customer\": {\n    \t\"id\":\"00000000001\",\n    \t\"name\":\"Joko\",\n    \t\"email\":\"joko@gmail.com\",\n    \t\"phone\":\"081287458232\",\n\t\t\"country\":\"ID\",\n\t\t\"address\":\"Jakarta, Menara Mulia Lt 8\"\n\t},\n    \"order\": {\n       \t\"invoice_number\":\"MINV20201026-0124\",\n       \t\"line_items\": [\n\t\t\t{\n      \t\t\"name\": \"Sepatu Merah\",\n      \t\t\"price\": 30000,\n      \t\t\"quantity\": 2\n    \t\t},\n\t\t\t{\n      \t\t\"name\": \"Sepatu Biru\",\n      \t\t\"price\": 30000,\n      \t\t\"quantity\": 1\n    \t\t}\n  \t\t],\n       \t\"amount\": 90000,\n       \t\"callback_url\": \"https://jokul.doku.com/docs\",\n       \t\"auto_redirect\": false,\n       \t\"session_id\": \"0000231223\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://sandbox.doku.com/credit-card/v1/payment-page",
+									"protocol": "https",
+									"host": [
+										"sandbox",
+										"doku",
+										"com"
+									],
+									"path": [
+										"credit-card",
+										"v1",
+										"payment-page"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Virtual Account",
+					"item": [
+						{
+							"name": "Mandiri VA",
+							"item": [
+								{
+									"name": "Generate Payment Code",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "ba31e40b-8fbe-42fc-b712-5d828ad082f7",
+												"exec": [
+													"function generateCheckSum(jsonBody) {",
+													"    var body = JSON.parse(jsonBody);",
+													"    var key = pm.variables.get(\"secret_key\");",
+													"",
+													"    signatureComponents = body.client.id + body.customer.email + body.customer.name",
+													"        + (body.order.amount == null ? '' : body.order.amount) + body.order.invoice_number",
+													"        + (body.order.max_amount == null ? '' : body.order.max_amount)",
+													"        + (body.order.min_amount == null ? '' : body.order.min_amount)",
+													"        + body.virtual_account_info.expired_time + (body.virtual_account_info.info1 == null ? '' : body.virtual_account_info.info1)",
+													"        + (body.virtual_account_info.info2 == null ? '' : body.virtual_account_info.info2)",
+													"        + (body.virtual_account_info.info3 == null ? '' : body.virtual_account_info.info3)",
+													"        + body.virtual_account_info.reusable_status",
+													"        + key",
+													"    var signature = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(signatureComponents));",
+													"    console.log('Komponen signature: ' + signatureComponents)",
+													"    console.log('Signature: ' + signature)",
+													"    return signature;",
+													"}",
+													"postman.setEnvironmentVariable('checkSum', generateCheckSum(pm.request.body));"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"client\": {\n        \"id\":\"{{client_id}}\"\n    },\n    \"order\": {\n        \"invoice_number\":\"MANZ202012313442\",\n        \"amount\": 150000\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 60,\n        \"reusable_status\": true,\n        \"info1\": \"Online Shoping Store\",\n        \"info2\": \"Contact support@oss.id\",\n        \"info3\": \"Thank for shopping in oss.id\"\n    },\n    \"customer\": {\n       \"name\":\"Taufik Ismail\",\n        \"email\":\"taufik@doku.com\"\n    },\n    \"security\":{\n        \"check_sum\":\"{{checkSum}}\"\n    }\n}",
+											"options": {
+												"raw": {}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/mandiri-virtual-account/v1/payment-code",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"mandiri-virtual-account",
+												"v1",
+												"payment-code"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "BCA VA",
+							"item": [
+								{
+									"name": "Generate Payment Code - Closed Amount",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "cdf7a9cd-d2d4-48f6-803d-bb6c7d416539",
+												"exec": [
+													"function generateCheckSum(jsonBody) {",
+													"    var body = JSON.parse(jsonBody);",
+													"    var key = pm.variables.get(\"secret_key\");",
+													"    ",
+													"    signatureComponents = body.client.id + body.customer.email + body.customer.name",
+													"        + (body.order.amount == null ? '' : body.order.amount) + body.order.invoice_number",
+													"        + (body.order.max_amount == null ? '' : body.order.max_amount)",
+													"        + (body.order.min_amount == null ? '' : body.order.min_amount)",
+													"        + body.virtual_account_info.expired_time + (body.virtual_account_info.info1 == null ? '' : body.virtual_account_info.info1)",
+													"        + (body.virtual_account_info.info2 == null ? '' : body.virtual_account_info.info2)",
+													"        + (body.virtual_account_info.info3 == null ? '' : body.virtual_account_info.info3)",
+													"        + body.virtual_account_info.reusable_status",
+													"        + key",
+													"    var signature = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(signatureComponents));",
+													"    console.log('Komponen signature: ' + signatureComponents)",
+													"    console.log('Signature: ' + signature)",
+													"    return signature;",
+													"}",
+													"postman.setEnvironmentVariable('checkSum', generateCheckSum(pm.request.body));"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"type": "text",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"client\": {\n        \"id\": \"{{client_id}}\"\n    },\n    \"order\": {\n        \"invoice_number\": \"MIN0006apo\",\n        \"amount\": 1200000,\n        \"line_items\": [\n            {\n                \"name\": \"Rolex\",\n                \"price\": 500000,\n                \"quantity\": 2\n            },\n            {\n                \"name\": \"Patek Phillipe\",\n                \"price\": 100000,\n                \"quantity\": 2\n            }\n        ]\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 60,\n        \"reusable_status\": false,\n        \"info1\": \"Online Shoping Store\",\n        \"info2\": \"Contact support@oss.id\",\n        \"info3\": \"Thank for shopping in oss.id\"\n    },\n    \"customer\": {\n        \"name\": \"Septanto\",\n        \"email\": \"septanto@doku.com\"\n    },\n    \"security\": {\n        \"check_sum\": \"{{checkSum}}\"\n    }\n}",
+											"options": {
+												"raw": {}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/bca-virtual-account/v1/payment-code",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"bca-virtual-account",
+												"v1",
+												"payment-code"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Generate Payment Code - Open Amount",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "775952e6-7adf-4ec6-a968-2b4b643d1579",
+												"exec": [
+													"function generateCheckSum(jsonBody) {",
+													"    var body = JSON.parse(jsonBody);",
+													"    var key = pm.variables.get(\"secret_key\");",
+													"    ",
+													"    signatureComponents = body.client.id + body.customer.email + body.customer.name",
+													"        + (body.order.amount == null ? '' : body.order.amount) + body.order.invoice_number",
+													"        + (body.order.max_amount == null ? '' : body.order.max_amount)",
+													"        + (body.order.min_amount == null ? '' : body.order.min_amount)",
+													"        + body.virtual_account_info.expired_time + (body.virtual_account_info.info1 == null ? '' : body.virtual_account_info.info1)",
+													"        + (body.virtual_account_info.info2 == null ? '' : body.virtual_account_info.info2)",
+													"        + (body.virtual_account_info.info3 == null ? '' : body.virtual_account_info.info3)",
+													"        + body.virtual_account_info.reusable_status",
+													"        + key",
+													"    var signature = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(signatureComponents));",
+													"    console.log('Komponen signature: ' + signatureComponents)",
+													"    console.log('Signature: ' + signature)",
+													"    return signature;",
+													"}",
+													"postman.setEnvironmentVariable('checkSum', generateCheckSum(pm.request.body));"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"type": "text",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"client\": {\n        \"id\": \"{{client_id}}\"\n    },\n    \"order\": {\n        \"invoice_number\": \"MIN026688826ullo\",\n        \"amount\": 0\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 60,\n        \"reusable_status\": false,\n        \"info1\": \"Online Shoping Store\",\n        \"info2\": \"Contact support@oss.id\",\n        \"info3\": \"Thank for shopping in oss.id\"\n    },\n    \"customer\": {\n        \"name\": \"Septanto\",\n        \"email\": \"septanto@doku.com\"\n    },\n    \"security\": {\n        \"check_sum\": \"{{checkSum}}\"\n    }\n}",
+											"options": {
+												"raw": {}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/bca-virtual-account/v1/payment-code",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"bca-virtual-account",
+												"v1",
+												"payment-code"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "Mandiri Syariah VA",
+							"item": [
+								{
+									"name": "Generate Payment Code",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "0cc9e641-4d69-4c81-9189-1cb8e6b9a2dd",
+												"exec": [
+													"var client_id = pm.variables.get(\"client_id\");",
+													"var key = pm.variables.get(\"secret_key\");",
+													"var req_id = _.random(1, 100000);",
+													"// var req_id = \"94018\";",
+													"var dateFormat = new Date().toISOString().slice(0, 19)+\"Z\";",
+													"var targetPath = \"/bsm-virtual-account/v2/payment-code\";",
+													"",
+													"function generatePayCodeSignature(jsonBody, key, client, req, tgl, target) {",
+													"var body = (jsonBody.raw);",
+													"var bodySha256 = CryptoJS.enc.Base64.stringify(CryptoJS.SHA256(body));",
+													"var signatureComponents = ",
+													"\"Client-Id:\"+client+\"\\n\"",
+													"+\"Request-Id:\"+req+\"\\n\"",
+													"+\"Request-Timestamp:\"+tgl+\"\\n\"",
+													"+\"Request-Target:\"+target+\"\\n\"",
+													"+\"Digest:\"+ bodySha256;",
+													"var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(signatureComponents,key));",
+													"console.log('body : \\n' + body);",
+													"console.log('Digest : '+ bodySha256);",
+													"console.log('UTC : ' +tgl);",
+													"console.log('Komponen signature : \\n' + signatureComponents);",
+													"console.log('Signature : ' + signature);",
+													"return (signature);",
+													"}",
+													"",
+													"var Header = require('postman-collection').Header",
+													"pm.request.headers.add({key : 'Signature', value :\"HMACSHA256=\"+generatePayCodeSignature(pm.request.body, key, client_id, req_id, dateFormat, targetPath)});",
+													"pm.request.headers.add({key : 'Request-Id', value : req_id});",
+													"pm.request.headers.add({key : 'Client-Id', value : client_id});",
+													"pm.request.headers.add({key : 'Request-Timestamp', value : dateFormat});",
+													"pm.request.headers.add({key : 'Request-Target', value : targetPath});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"order\": {\n        \"invoice_number\": \"MINUDJ-jdjd9098-test-007\",\n        \"min_amount\": 1000,\n        \"max_amount\": 500000\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 60,\n        \"reusable_status\": false,\n        \"info1\": \"Online Shoping Store\",\n        \"info2\": \"Contact support@oss.id\",\n        \"info3\": \"Thank for shopping in oss.id\"\n    },\n    \"customer\": {\n        \"name\": \"testing\",\n        \"email\": \"testing@doku.com\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/bsm-virtual-account/v2/payment-code",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"bsm-virtual-account",
+												"v2",
+												"payment-code"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "DOKU VA",
+							"item": [
+								{
+									"name": "Generate Payment Code",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "6b42d066-6465-4220-b871-7e79f9e8dc00",
+												"exec": [
+													"var client_id = pm.variables.get(\"client_id\");",
+													"var key = pm.variables.get(\"secret_key\");",
+													"var req_id = _.random(1, 100000);",
+													"var dateFormat = new Date().toISOString().slice(0, 19)+\"Z\";",
+													"var targetPath = \"/doku-virtual-account/v2/payment-code\";",
+													"",
+													"function generatePayCodeSignature(jsonBody, key, client, req, tgl, target) {",
+													"var body = (jsonBody.raw);",
+													"var bodySha256 = CryptoJS.enc.Base64.stringify(CryptoJS.SHA256(body));",
+													"var signatureComponents = ",
+													"\"Client-Id:\"+client+\"\\n\"",
+													"+\"Request-Id:\"+req+\"\\n\"",
+													"+\"Request-Timestamp:\"+tgl+\"\\n\"",
+													"+\"Request-Target:\"+target+\"\\n\"",
+													"+\"Digest:\"+ bodySha256;",
+													"var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(signatureComponents,key));",
+													"console.log('body : \\n' + body);",
+													"console.log('Digest : '+ bodySha256);",
+													"console.log('UTC : ' +tgl);",
+													"console.log('Komponen signature : \\n' + signatureComponents);",
+													"console.log('Signature : ' + signature);",
+													"return (signature);",
+													"}",
+													"",
+													"var Header = require('postman-collection').Header",
+													"pm.request.headers.add({key : 'Signature', value :\"HMACSHA256=\"+generatePayCodeSignature(pm.request.body, key, client_id, req_id, dateFormat, targetPath)});",
+													"pm.request.headers.add({key : 'Request-Id', value : req_id});",
+													"pm.request.headers.add({key : 'Client-Id', value : client_id});",
+													"pm.request.headers.add({key : 'Request-Timestamp', value : dateFormat});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"order\": {\n        \"invoice_number\": \"MINV20200924-03\",\n        \"amount\": 150000\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 60,\n        \"reusable_status\": false,\n        \"info1\": \"Online Shoping Store\",\n        \"info2\": \"Contact support@oss.id\",\n        \"info3\": \"Thank for shopping in oss.id\"\n    },\n    \"customer\": {\n        \"name\": \"Taufik Ismail\",\n        \"email\": \"taufik@doku.com\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/doku-virtual-account/v2/payment-code",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"doku-virtual-account",
+												"v2",
+												"payment-code"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Convenience Store",
+					"item": [
+						{
+							"name": "Alfa Group",
+							"item": [
+								{
+									"name": "Generate Payment Code",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "720c0062-8b5f-448f-8331-1ce04f183573",
+												"exec": [
+													"var client_id = pm.variables.get(\"client_id\");",
+													"var key = pm.variables.get(\"secret_key\");",
+													"var req_id = _.random(1, 100000);",
+													"var dateFormat = new Date().toISOString().slice(0, 19)+\"Z\";",
+													"var targetPath = \"/alfa-convenience-store/v2/payment-code\";",
+													"",
+													"function generatePayCodeSignature(jsonBody, key, client, req, tgl, target) {",
+													"var body = (jsonBody.raw);",
+													"var bodySha256 = CryptoJS.enc.Base64.stringify(CryptoJS.SHA256(body));",
+													"var signatureComponents = ",
+													"\"Client-Id:\"+client+\"\\n\"",
+													"+\"Request-Id:\"+req+\"\\n\"",
+													"+\"Request-Timestamp:\"+tgl+\"\\n\"",
+													"+\"Request-Target:\"+target+\"\\n\"",
+													"+\"Digest:\"+ bodySha256;",
+													"var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(signatureComponents,key));",
+													"console.log('body : \\n' + body);",
+													"console.log('Digest : '+ bodySha256);",
+													"console.log('UTC : ' +tgl);",
+													"console.log('Komponen signature : \\n' + signatureComponents);",
+													"console.log('Signature : ' + signature);",
+													"return (signature);",
+													"}",
+													"",
+													"var Header = require('postman-collection').Header",
+													"pm.request.headers.add({key : 'Signature', value :\"HMACSHA256=\"+generatePayCodeSignature(pm.request.body, key, client_id, req_id, dateFormat, targetPath)});",
+													"pm.request.headers.add({key : 'Request-Id', value : req_id});",
+													"pm.request.headers.add({key : 'Client-Id', value : client_id});",
+													"pm.request.headers.add({key : 'Request-Timestamp', value : dateFormat});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"order\": {\n        \"invoice_number\": \"MINV20201s-sekyttt70305\",\n        \"amount\": 150000\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 60,\n        \"reusable_status\": false,\n        \"info\": \"Online Shoping Store\"\n    },\n    \"customer\": {\n        \"name\": \"Taufik Ismail\",\n        \"email\": \"taufik@doku.com\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/alfa-convenience-store/v2/payment-code",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"alfa-convenience-store",
+												"v2",
+												"payment-code"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "E-Money",
+					"item": [
+						{
+							"name": "OVO",
+							"item": [
+								{
+									"name": "Payment",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "a673b05a-7f8e-4eb6-a480-047ff0b95502",
+												"exec": [
+													"function check_sum(jsonBody) {\r",
+													"var body = JSON.parse(jsonBody);\r",
+													"var key = pm.variables.get(\"secret_key\");\r",
+													"\r",
+													"signatureComponents = \r",
+													"body.order.amount\r",
+													"+ body.client.id\r",
+													"+ body.order.invoice_number\r",
+													"+ body.ovo_info.ovo_id\r",
+													"+ key\r",
+													"\r",
+													"var signature = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(signatureComponents));\r",
+													"console.log('Komponen signature: ' + signatureComponents)\r",
+													"console.log('Signature: ' + signature)\r",
+													"return signature;\r",
+													"}\r",
+													"postman.setEnvironmentVariable('check_sum', check_sum(pm.request.body));"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "text/plain",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "Authorization",
+												"value": "Basic YWRtaW46cGFzc3dvcmQ=",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"client\": {\r\n        \"id\": \"{{client_id}}\"\r\n    },\r\n    \"order\": {\r\n        \"invoice_number\":\"INV-2020102701\",\r\n        \"amount\": 15000\r\n    },\r\n    \"ovo_info\": {\r\n        \"ovo_id\":\"081211111111\"\r\n    },\r\n    \"security\":{\r\n        \"check_sum\":\"{{check_sum}}\"\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/ovo-emoney/v1/payment",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"ovo-emoney",
+												"v1",
+												"payment"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Void",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"id": "b027d468-96c2-49e0-91a3-a366b5bda129",
+												"exec": [
+													"function check_sum(jsonBody) {\r",
+													"var body = JSON.parse(jsonBody)\r",
+													"var key = pm.variables.get(\"secret_key\");\r",
+													"\r",
+													"signatureComponents = \r",
+													"body.order.amount\r",
+													"+ body.ovo_payment.approval_code\r",
+													"+ body.ovo_payment.batch_number\r",
+													"+ body.client.id\r",
+													"+ body.order.invoice_number\r",
+													"+ body.ovo_info.ovo_id\r",
+													"+ body.ovo_payment.reference_number\r",
+													"+ body.ovo_payment.trace_number\r",
+													"+ key\r",
+													"\r",
+													"var signature = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(signatureComponents));\r",
+													"console.log('Komponen signature: ' + signatureComponents)\r",
+													"console.log('Signature: ' + signature)\r",
+													"return signature;\r",
+													"}\r",
+													"postman.setEnvironmentVariable('check_sum', check_sum(pm.request.body));"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"type": "text",
+												"value": "text/plain",
+												"disabled": true
+											},
+											{
+												"key": "Authorization",
+												"type": "text",
+												"value": "Basic YWRtaW46cGFzc3dvcmQ="
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"client\": {\r\n        \"id\": \"{{client_id}}\"\r\n    },\r\n    \"order\": {\r\n   \"invoice_number\": \"INV-2020102701\",\r\n        \"amount\": 15000\r\n    },\r\n    \"ovo_info\": {\r\n        \"ovo_id\": \"081211111111\"\r\n    },\r\n    \"ovo_payment\": {\r\n        \"batch_number\": 3,\r\n        \"trace_number\": 987654,\r\n        \"reference_number\": 36,\r\n        \"approval_code\": \"19832\"\r\n    },\r\n    \"security\": {\r\n         \"check_sum\": \"{{check_sum}}\"\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/ovo-emoney/v1/cancel",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"ovo-emoney",
+												"v1",
+												"cancel"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Jokul Checkout",
+			"item": [
+				{
+					"name": "Initiate Payment",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "65254075-073c-411e-b212-34fac04da000",
+								"exec": [
+									"var client_id = pm.variables.get(\"client_id\");",
+									"var key = pm.variables.get(\"secret_key\");",
+									"var req_id = _.random(1, 100000);",
+									"var dateFormat = new Date().toISOString().slice(0, 19)+\"Z\";",
+									"var targetPath = \"/checkout/v1/payment\";",
+									"",
+									"function generatePayCodeSignature(jsonBody, key, client, req, tgl, target) {",
+									"var body = (jsonBody.raw);",
+									"var bodySha256 = CryptoJS.enc.Base64.stringify(CryptoJS.SHA256(body));",
+									"var signatureComponents = ",
+									"\"Client-Id:\"+client+\"\\n\"",
+									"+\"Request-Id:\"+req+\"\\n\"",
+									"+\"Request-Timestamp:\"+tgl+\"\\n\"",
+									"+\"Request-Target:\"+target+\"\\n\"",
+									"+\"Digest:\"+ bodySha256;",
+									"var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(signatureComponents,key));",
+									"console.log('body : \\n' + body);",
+									"console.log('Digest : '+ bodySha256);",
+									"console.log('UTC : ' +tgl);",
+									"console.log('Komponen signature : \\n' + signatureComponents);",
+									"console.log('Signature : ' + signature);",
+									"return (signature);",
+									"}",
+									"",
+									"var Header = require('postman-collection').Header",
+									"pm.request.headers.add({key : 'Signature', value :\"HMACSHA256=\"+generatePayCodeSignature(pm.request.body, key, client_id, req_id, dateFormat, targetPath)});",
+									"pm.request.headers.add({key : 'Request-Id', value : req_id});",
+									"pm.request.headers.add({key : 'Client-Id', value : client_id});",
+									"pm.request.headers.add({key : 'Request-Timestamp', value : dateFormat});",
+									"// pm.request.headers.add({key : 'Request-Target', value : targetPath});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"order\": {\n        \"amount\": 500000,\n        \"invoice_number\": \"INV-20201102-124\",\n        \"currency\": \"IDR\",\n        \"session_id\": \"SU5WFDferd561dfasfasdfae123b\",\n        \"callback_url\": \"http://doku.com/\",\n        \"line_items\": [\n            {\n                \"name\": \"Sepatu Reebok\",\n                \"price\": 500000,\n                \"quantity\" : 1\n            }\n        ]\n    },\n    \"payment\": {\n        \"payment_due_date\": 60\n    },\n    \"customer\": {\n        \"name\": \"Anton\",\n        \"email\": \"anton@doku.com\",\n        \"phone\": \"+6285694566147\",\n        \"address\": \"Plaza Asia Office Park Unit 3\",\n        \"country\": \"ID\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/checkout/v1/payment",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"checkout",
+								"v1",
+								"payment"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "a6adaca8-c591-47a6-9745-6d15e868d16b",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "89909ef0-3600-4758-af93-d25bb246b981",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "05b94707-2a51-492e-8ddc-0652fc31cc1c",
+			"key": "url",
+			"value": "https://api-sandbox.doku.com"
+		},
+		{
+			"id": "8327a678-b306-488a-b979-27bf4f3e166e",
+			"key": "prod_url",
+			"value": "https://api.doku.com"
+		},
+		{
+			"id": "27874e01-7254-43e5-af79-fe9682d37c7d",
+			"key": "client_id",
+			"value": "MCH-0001-2768422848330"
+		},
+		{
+			"id": "fc3ef784-d70b-4771-b45b-a54f7f75abb7",
+			"key": "secret_key",
+			"value": "SK-hCJ42G28TA0MKG9LE2E_1"
+		}
+	],
+	"protocolProfileBehavior": {}
+}
