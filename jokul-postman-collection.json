@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "f75cd286-15b5-4e83-8385-1d1ffda1a96f",
+		"_postman_id": "b69d76f5-db59-4b18-b85a-06736c232105",
 		"name": "Jokul API Collection",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -878,7 +878,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"order\": {\n        \"invoice_number\": \"INV-{{$timestamp}}\",\n        \"amount\": 20000\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 60,\n        \"reusable_status\": true,\n        \"info1\": \"Online Shoping 1\",\n        \"info2\": \"Online Shoping 2\",\n        \"info3\": \"Online Shoping 3\"\n    },\n    \"customer\": {\n        \"name\": \"Anton Budiman\",\n        \"email\": \"anton@doku.com\"\n    }\n}",
+											"raw": "{\n    \"order\": {\n        \"invoice_number\": \"INV-{{$timestamp}}\",\n        \"amount\": 20000\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 60,\n        \"reusable_status\": true,\n        \"ref_info\" : [\n            {\n            \"ref_name\": \"kota\",\n            \"ref_value\": \"bekasi\"\n            },\n            {\n            \"ref_name\": \"provinsi\",\n            \"ref_value\": \"jawa barat\"\n            }\n        ]\n    },\n    \"customer\": {\n        \"name\": \"Anton Budiman\",\n        \"email\": \"anton@doku.com\"\n    }\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -961,7 +961,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"order\": {\n        \"invoice_number\": \"INV-20201223-00001\",\n        \"amount\": 40000\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 60,\n        \"virtual_account_number\" : \"8225000000000006\",\n        \"info1\": \"Online Shoping 1\",\n        \"info2\": \"Online Shoping 2\",\n        \"info3\": \"Online Shoping 3\"\n    },\n    \"customer\": {\n        \"name\": \"Anton Budiman\",\n        \"email\": \"anton@doku.com\"\n    }\n}",
+											"raw": "{\n    \"order\": {\n        \"invoice_number\": \"INV-1634201275\",\n        \"amount\": 40000\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 120,\n        \"virtual_account_number\" : \"8124600000000011\",\n        \"ref_info\" : [\n            {\n            \"ref_name\": \"kota\",\n            \"ref_value\": \"bekasi\"\n            },\n            {\n            \"ref_name\": \"provinsi\",\n            \"ref_value\": \"jawa barat\"\n            }\n        ]\n    },\n    \"customer\": {\n        \"name\": \"Anton Budiman\",\n        \"email\": \"anton@doku.com\"\n    }\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -975,6 +975,271 @@
 											],
 											"path": [
 												"permata-virtual-account",
+												"v2",
+												"payment-code"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "CIMB VA",
+							"item": [
+								{
+									"name": "CIMB VA - Generate Payment Code",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"var uuid = require('uuid');",
+													"pm.variables.set(\"request_id\", uuid.v4());",
+													"pm.variables.set(\"request_timestamp\", new Date().toISOString().slice(0, 19)+\"Z\");",
+													"",
+													"function generateSignature(jsonBody) {",
+													"    var digestSHA256 = CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(jsonBody));",
+													"    var digestBase64 = CryptoJS.enc.Base64.stringify(digestSHA256);",
+													"    console.log('Digest Component: ' + jsonBody)",
+													"    console.log('Digest sha256: ' + digestSHA256)",
+													"    console.log('Digest: ' + digestBase64)",
+													"    var signatureComponents = 'Client-Id:' + pm.variables.get('client_id') +'\\n'+",
+													"    'Request-Id:' + pm.variables.get('request_id') +'\\n'+",
+													"    'Request-Timestamp:' + pm.variables.get('request_timestamp') + '\\n'+",
+													"    'Request-Target:/cimb-virtual-account/v2/payment-code' + '\\n'+",
+													"    'Digest:' + digestBase64;",
+													"    var signatureHmacSha256 = CryptoJS.HmacSHA256(signatureComponents,pm.variables.get('secret_key'));",
+													"    var signatureBase64 = CryptoJS.enc.Base64.stringify(signatureHmacSha256);",
+													"    console.log('Signature Components: ' + signatureComponents)",
+													"    console.log('Signature HMACSHA256: ' + signatureHmacSha256)",
+													"    console.log('Signature: ' + signatureBase64)",
+													"    return 'HMACSHA256='+signatureBase64;",
+													"}",
+													"",
+													"pm.variables.set('signature', generateSignature(pm.variables.replaceIn(pm.request.body.raw)));"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Client-Id",
+												"value": "{{client_id}}",
+												"type": "text"
+											},
+											{
+												"key": "Request-Id",
+												"value": "{{request_id}}",
+												"type": "text"
+											},
+											{
+												"key": "Request-Timestamp",
+												"value": "{{request_timestamp}}",
+												"type": "text"
+											},
+											{
+												"key": "Signature",
+												"value": "{{signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"order\": {\n        \"invoice_number\": \"INV-{{$timestamp}}\",\n        \"amount\": 20000\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 60,\n        \"reusable_status\": true,\n        \"ref_info\" : [\n            {\n            \"ref_name\": \"kota\",\n            \"ref_value\": \"bekasi\"\n            },\n            {\n            \"ref_name\": \"provinsi\",\n            \"ref_value\": \"jawa barat\"\n            }\n        ]\n    },\n    \"customer\": {\n        \"name\": \"Anton Budiman\",\n        \"email\": \"anton@doku.com\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/cimb-virtual-account/v2/payment-code",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"cimb-virtual-account",
+												"v2",
+												"payment-code"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "CIMB VA - Update Payment Code",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"var uuid = require('uuid');",
+													"pm.variables.set(\"request_id\", uuid.v4());",
+													"pm.variables.set(\"request_timestamp\", new Date().toISOString().slice(0, 19)+\"Z\");",
+													"",
+													"function generateSignature(jsonBody) {",
+													"    var digestSHA256 = CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(jsonBody));",
+													"    var digestBase64 = CryptoJS.enc.Base64.stringify(digestSHA256);",
+													"    console.log('Digest Component: ' + jsonBody)",
+													"    console.log('Digest sha256: ' + digestSHA256)",
+													"    console.log('Digest: ' + digestBase64)",
+													"    var signatureComponents = 'Client-Id:' + pm.variables.get('client_id') +'\\n'+",
+													"    'Request-Id:' + pm.variables.get('request_id') +'\\n'+",
+													"    'Request-Timestamp:' + pm.variables.get('request_timestamp') + '\\n'+",
+													"    'Request-Target:/cimb-virtual-account/v2/payment-code' + '\\n'+",
+													"    'Digest:' + digestBase64;",
+													"    var signatureHmacSha256 = CryptoJS.HmacSHA256(signatureComponents,pm.variables.get('secret_key'));",
+													"    var signatureBase64 = CryptoJS.enc.Base64.stringify(signatureHmacSha256);",
+													"    console.log('Signature Components: ' + signatureComponents)",
+													"    console.log('Signature HMACSHA256: ' + signatureHmacSha256)",
+													"    console.log('Signature: ' + signatureBase64)",
+													"    return 'HMACSHA256='+signatureBase64;",
+													"}",
+													"",
+													"pm.variables.set('signature', generateSignature(pm.request.body));"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Client-Id",
+												"value": "{{client_id}}",
+												"type": "text"
+											},
+											{
+												"key": "Request-Id",
+												"value": "{{request_id}}",
+												"type": "text"
+											},
+											{
+												"key": "Request-Timestamp",
+												"value": "{{request_timestamp}}",
+												"type": "text"
+											},
+											{
+												"key": "Signature",
+												"value": "{{signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"order\": {\n        \"invoice_number\": \"INV-1634201275\",\n        \"amount\": 40000\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 120,\n        \"virtual_account_number\" : \"8124600000000011\",\n        \"ref_info\" : [\n            {\n            \"ref_name\": \"kota\",\n            \"ref_value\": \"bekasi\"\n            },\n            {\n            \"ref_name\": \"provinsi\",\n            \"ref_value\": \"jawa barat\"\n            }\n        ]\n    },\n    \"customer\": {\n        \"name\": \"Anton Budiman\",\n        \"email\": \"anton@doku.com\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/cimb-virtual-account/v2/payment-code",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"cimb-virtual-account",
+												"v2",
+												"payment-code"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "BNI VA",
+							"item": [
+								{
+									"name": "BNI VA - Generate Payment Code",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"var uuid = require('uuid');",
+													"pm.variables.set(\"request_id\", uuid.v4());",
+													"pm.variables.set(\"request_timestamp\", new Date().toISOString().slice(0, 19)+\"Z\");",
+													"",
+													"function generateSignature(jsonBody) {",
+													"    var digestSHA256 = CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(jsonBody));",
+													"    var digestBase64 = CryptoJS.enc.Base64.stringify(digestSHA256);",
+													"    console.log('Digest Component: ' + jsonBody)",
+													"    console.log('Digest sha256: ' + digestSHA256)",
+													"    console.log('Digest: ' + digestBase64)",
+													"    var signatureComponents = 'Client-Id:' + pm.variables.get('client_id') +'\\n'+",
+													"    'Request-Id:' + pm.variables.get('request_id') +'\\n'+",
+													"    'Request-Timestamp:' + pm.variables.get('request_timestamp') + '\\n'+",
+													"    'Request-Target:/bni-virtual-account/v2/payment-code' + '\\n'+",
+													"    'Digest:' + digestBase64;",
+													"    var signatureHmacSha256 = CryptoJS.HmacSHA256(signatureComponents,pm.variables.get('secret_key'));",
+													"    var signatureBase64 = CryptoJS.enc.Base64.stringify(signatureHmacSha256);",
+													"    console.log('Signature Components: ' + signatureComponents)",
+													"    console.log('Signature HMACSHA256: ' + signatureHmacSha256)",
+													"    console.log('Signature: ' + signatureBase64)",
+													"    return 'HMACSHA256='+signatureBase64;",
+													"}",
+													"",
+													"pm.variables.set('signature', generateSignature(pm.variables.replaceIn(pm.request.body.raw)));"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Client-Id",
+												"value": "{{client_id}}",
+												"type": "text"
+											},
+											{
+												"key": "Request-Id",
+												"value": "{{request_id}}",
+												"type": "text"
+											},
+											{
+												"key": "Request-Timestamp",
+												"value": "{{request_timestamp}}",
+												"type": "text"
+											},
+											{
+												"key": "Signature",
+												"value": "{{signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"order\": {\n        \"invoice_number\": \"INV-{{$timestamp}}\",\n        \"amount\": 20000\n    },\n    \"virtual_account_info\": {\n        \"expired_time\": 60,\n        \"biling_type\" : \"FIXED\",\n        \"info\" : \"Product detail here\",\n        \"merchant_unique_reference\":\"UNIQUE_00002\"\n    },\n    \"customer\": {\n        \"name\": \"Anton Budiman\",\n        \"email\": \"anton@doku.com\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/bni-virtual-account/v2/payment-code",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"bni-virtual-account",
 												"v2",
 												"payment-code"
 											]
