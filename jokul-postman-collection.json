@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "b69d76f5-db59-4b18-b85a-06736c232105",
+		"_postman_id": "48e17bf3-5d92-463e-993a-7b8fffa6e245",
 		"name": "Jokul API Collection",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -1339,6 +1339,89 @@
 										}
 									},
 									"response": []
+								},
+								{
+									"name": "Indomaret - Generate Payment Code Copy",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"var uuid = require('uuid');",
+													"pm.variables.set(\"request_id\", uuid.v4());",
+													"pm.variables.set(\"request_timestamp\", new Date().toISOString().slice(0, 19)+\"Z\");",
+													"",
+													"function generateSignature(jsonBody) {",
+													"    var digestSHA256 = CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(jsonBody));",
+													"    var digestBase64 = CryptoJS.enc.Base64.stringify(digestSHA256);",
+													"    console.log('Digest Component: ' + jsonBody)",
+													"    console.log('Digest sha256: ' + digestSHA256)",
+													"    console.log('Digest: ' + digestBase64)",
+													"    var signatureComponents = 'Client-Id:' + pm.variables.get('client_id') +'\\n'+",
+													"    'Request-Id:' + pm.variables.get('request_id') +'\\n'+",
+													"    'Request-Timestamp:' + pm.variables.get('request_timestamp') + '\\n'+",
+													"    'Request-Target:/indomaret-online-to-offline/v2/payment-code' + '\\n'+",
+													"    'Digest:' + digestBase64;",
+													"    var signatureHmacSha256 = CryptoJS.HmacSHA256(signatureComponents,pm.variables.get('secret_key'));",
+													"    var signatureBase64 = CryptoJS.enc.Base64.stringify(signatureHmacSha256);",
+													"    console.log('Signature Components: ' + signatureComponents)",
+													"    console.log('Signature HMACSHA256: ' + signatureHmacSha256)",
+													"    console.log('Signature: ' + signatureBase64)",
+													"    return 'HMACSHA256='+signatureBase64;",
+													"}",
+													"",
+													"pm.variables.set('signature', generateSignature(pm.variables.replaceIn(pm.request.body.raw)));"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Client-Id",
+												"value": "{{client_id}}",
+												"type": "text"
+											},
+											{
+												"key": "Request-Id",
+												"value": "{{request_id}}",
+												"type": "text"
+											},
+											{
+												"key": "Request-Timestamp",
+												"value": "{{request_timestamp}}",
+												"type": "text"
+											},
+											{
+												"key": "Signature",
+												"value": "{{signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"order\": {\n        \"invoice_number\": \"INV-{{$timestamp}}\",\n        \"amount\": 150000\n    },\n    \"online_to_offline_info\": {\n        \"expired_time\": 60,\n        \"reusable_status\": false,\n        \"info\": \"Online Shoping Store\"\n    },\n    \"customer\": {\n        \"name\": \"Taufik Ismail\",\n        \"email\": \"taufik@doku.com\"\n    },\n    \"alfa_info\": {\n        \"receipt\": {\n            \"footer_message\": \"Call Center 021 555-0525\"\n        }\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/indomaret-online-to-offline/v2/payment-code",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"indomaret-online-to-offline",
+												"v2",
+												"payment-code"
+											]
+										}
+									},
+									"response": []
 								}
 							]
 						}
@@ -2355,6 +2438,298 @@
 							]
 						}
 					]
+				},
+				{
+					"name": "Paylater",
+					"item": [
+						{
+							"name": "Generate Order",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// --- lokal",
+											"//var key = \"TYUI56&*\";",
+											"//var client_id = \"MCH-1103200003\";",
+											"// var client_id = \"INSURANCE-1103200004\";",
+											"",
+											"// --- SIT",
+											"//var key = \"TYUI56&*\";",
+											"//var client_id = \"MCH-1103200003\";",
+											"",
+											"//UAT",
+											"var key = \"SK-W3spkLBCYkZgMadoJ95f\";",
+											"var client_id = \"MCH-1190-1640337564039\";",
+											"",
+											"var req_id = _.random(1, 100000);",
+											"var dateFormat = new Date().toISOString().slice(0, 19)+\"Z\";",
+											"var targetPath = \"/akulaku-peer-to-peer/v2/generate-order\";",
+											"",
+											"function generatePayCodeSignature(jsonBody, key, client, req, tgl, target) {",
+											"var body = (jsonBody.raw);",
+											"var bodySha256 = CryptoJS.enc.Base64.stringify(CryptoJS.SHA256(body));",
+											"var signatureComponents = ",
+											"\"Client-Id:\"+client+\"\\n\"",
+											"+\"Request-Id:\"+req+\"\\n\"",
+											"+\"Request-Timestamp:\"+tgl+\"\\n\"",
+											"+\"Request-Target:\"+target+\"\\n\"",
+											"+\"Digest:\"+ bodySha256;",
+											"var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(signatureComponents,key));",
+											"console.log('body : \\n' + body);",
+											"console.log('Digest : '+ bodySha256);",
+											"console.log('UTC : ' +tgl);",
+											"console.log('Komponen signature : \\n' + signatureComponents);",
+											"console.log('Signature : ' + signature);",
+											"return (signature);",
+											"}",
+											"",
+											"var Header = require('postman-collection').Header",
+											"pm.request.headers.add({key : 'Signature', value :\"HMACSHA256=\"+generatePayCodeSignature(pm.request.body, key, client_id, req_id, dateFormat, targetPath)});",
+											"pm.request.headers.add({key : 'Request-Id', value : req_id});",
+											"pm.request.headers.add({key : 'Client-Id', value : client_id});",
+											"pm.request.headers.add({key : 'Request-Timestamp', value : dateFormat});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"order\":{\n      \"invoice_number\":\"invoice-000001014\",\n      \"line_items\":[\n         {\n            \"name\":\"The Way I Used to Be by Amber Smith\",\n            \"price\":\"30000\",\n            \"quantity\":\"2\",\n            \"sku\":\"1002\",\n            \"category\":\"Book\"\n         },\n         {\n            \"name\":\"JAVA Programming\",\n            \"price\":\"5000\",\n            \"quantity\":\"10\",\n            \"sku\":\"1001\",\n            \"category\":\"Book\"\n         }\n      ],\n      \"amount\":\"110000\",\n      \"callback_url\":\"https://merchant.com/return-url\"\n   },\n   \"payment\":{\n      \"merchant_unique_reference\":\"TEST-ABC-000104\"\n   },\n   \"customer\":{\n      \"id\":\"fyona\",\n      \"name\":\"fyona panjaitan\",\n      \"phone\":\"6281874744447\",\n      \"address\":\"taman setiabudi\",\n      \"postcode\":\"120129\",\n      \"state\":\"Jakarta\",\n      \"city\":\"Jakarta Selatan\"\n   }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}/akulaku-peer-to-peer/v2/generate-order",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"akulaku-peer-to-peer",
+										"v2",
+										"generate-order"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Callback",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"function generateSignature() {",
+											"    var body = pm.request.body.urlencoded",
+											"    var secKey = \"QfqQejT3sLhkLwZptVYZwx7Swulnb6TIrlwj1gMCF58\"",
+											"    var appId = body.get('appId')",
+											"    var refNo = body.get('refNo')",
+											"    var status = body.get('status')",
+											"",
+											"    var formula = appId + secKey + refNo + status",
+											"    var sign = CryptoJS.enc.Base64.stringify(CryptoJS.SHA512(formula)).replace(/=/g, '').replace(/\\+/g, '-').replace(/\\//g, '_')",
+											"",
+											"    console.log(formula)",
+											"    console.log(sign)",
+											"",
+											"    return sign",
+											"}",
+											"",
+											"postman.setEnvironmentVariable('generateSignature', generateSignature());",
+											"//formula signature : 15006801QfqQejT3sLhkLwZptVYZwx7Swulnb6TIrlwj1gMCF58MCH-1103200003ABC-0071100",
+											"//signature : K-GCEdci4fUIXaRFzog1eiFkCy39DLNaGf6IjuNKnpcAY_W6KGALEhblw4WSh2A-GTJeCNMr6ahWmcVYW3eGHQ"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "appId",
+											"value": "15006801",
+											"type": "text"
+										},
+										{
+											"key": "refNo",
+											"value": "MCH-1103200003REFUND-ABC-0090",
+											"type": "text"
+										},
+										{
+											"key": "status",
+											"value": "100",
+											"type": "text"
+										},
+										{
+											"key": "sign",
+											"value": "{{generateSignature}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{url}}/akulaku-peer-to-peer/v2/payment",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"akulaku-peer-to-peer",
+										"v2",
+										"payment"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Cancellation",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var key = \"SK-W3spkLBCYkZgMadoJ95f\";",
+											"var client_id = \"MCH-1190-1640337564039\";",
+											"",
+											"var req_id = _.random(1, 100000);",
+											"var dateFormat = new Date().toISOString().slice(0, 19)+\"Z\";",
+											"var targetPath = \"/akulaku-peer-to-peer/v2/cancellation\";",
+											"",
+											"function generatePayCodeSignature(jsonBody, key, client, req, tgl, target) {",
+											"var body = (jsonBody.raw);",
+											"var bodySha256 = CryptoJS.enc.Base64.stringify(CryptoJS.SHA256(body));",
+											"var signatureComponents = ",
+											"\"Client-Id:\"+client+\"\\n\"",
+											"+\"Request-Id:\"+req+\"\\n\"",
+											"+\"Request-Timestamp:\"+tgl+\"\\n\"",
+											"+\"Request-Target:\"+target+\"\\n\"",
+											"+\"Digest:\"+ bodySha256;",
+											"var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(signatureComponents,key));",
+											"console.log('body : \\n' + body);",
+											"console.log('Digest : '+ bodySha256);",
+											"console.log('UTC : ' +tgl);",
+											"console.log('Komponen signature : \\n' + signatureComponents);",
+											"console.log('Signature : ' + signature);",
+											"return (signature);",
+											"}",
+											"",
+											"var Header = require('postman-collection').Header",
+											"pm.request.headers.add({key : 'Signature', value :\"HMACSHA256=\"+generatePayCodeSignature(pm.request.body, key, client_id, req_id, dateFormat, targetPath)});",
+											"pm.request.headers.add({key : 'Request-Id', value : req_id});",
+											"pm.request.headers.add({key : 'Client-Id', value : client_id});",
+											"pm.request.headers.add({key : 'Request-Timestamp', value : dateFormat});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"order\":{\n      \"invoice_number\":\"CH-88277770234\"\n   },\n   \"payment\":{\n      \"merchant_unique_reference\":\"ABC-0090\",\n      \"identifier\":[\n         {\n            \"name\":\"AKULAKU_UNIQUE_REFERENCE\",\n            \"value\":\"MCH-1103200003ABC-0090\"\n         },\n         {\n            \"name\":\"ORDER_ID\",\n            \"value\":\"1000034679\"\n         }\n      ]\n   }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}/akulaku-peer-to-peer/v2/cancel",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"akulaku-peer-to-peer",
+										"v2",
+										"cancel"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Refund",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var key = \"SK-W3spkLBCYkZgMadoJ95f\";",
+											"var client_id = \"MCH-1190-1640337564039\";",
+											"",
+											"var req_id = _.random(1, 100000);",
+											"var dateFormat = new Date().toISOString().slice(0, 19)+\"Z\";",
+											"var targetPath = \"/akulaku-peer-to-peer/v2/refund\";",
+											"",
+											"function generatePayCodeSignature(jsonBody, key, client, req, tgl, target) {",
+											"var body = (jsonBody.raw);",
+											"var bodySha256 = CryptoJS.enc.Base64.stringify(CryptoJS.SHA256(body));",
+											"var signatureComponents = ",
+											"\"Client-Id:\"+client+\"\\n\"",
+											"+\"Request-Id:\"+req+\"\\n\"",
+											"+\"Request-Timestamp:\"+tgl+\"\\n\"",
+											"+\"Request-Target:\"+target+\"\\n\"",
+											"+\"Digest:\"+ bodySha256;",
+											"var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(signatureComponents,key));",
+											"console.log('body : \\n' + body);",
+											"console.log('Digest : '+ bodySha256);",
+											"console.log('UTC : ' +tgl);",
+											"console.log('Komponen signature : \\n' + signatureComponents);",
+											"console.log('Signature : ' + signature);",
+											"return (signature);",
+											"}",
+											"",
+											"var Header = require('postman-collection').Header",
+											"pm.request.headers.add({key : 'Signature', value :\"HMACSHA256=\"+generatePayCodeSignature(pm.request.body, key, client_id, req_id, dateFormat, targetPath)});",
+											"pm.request.headers.add({key : 'Request-Id', value : req_id});",
+											"pm.request.headers.add({key : 'Client-Id', value : client_id});",
+											"pm.request.headers.add({key : 'Request-Timestamp', value : dateFormat});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"order\":{\n      \"invoice_number\":\"invoice-000001011245\"\n   },\n   \"payment\":{\n      \"merchant_unique_reference\":\"REFUND-ABC-000104567\",\n      \"identifier\":[\n         {\n                \"name\": \"ORDER_ID\",\n                \"value\": \"1000043216\"\n            },\n            {\n                \"name\": \"AKULAKU_UNIQUE_REFERENCE\",\n                \"value\": \"MCH-0016-7451979181409REFUND-ABC-000104567\"\n            }\n      ]\n   },\n   \"refund\":{\n      \"merchant_unique_reference\":\"XYZ-00645678\"\n   }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}/akulaku-peer-to-peer/v2/refund",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"akulaku-peer-to-peer",
+										"v2",
+										"refund"
+									]
+								}
+							},
+							"response": []
+						}
+					]
 				}
 			],
 			"description": "Jokul Direct is a collection of REST APIs for customizing your payment flow"
@@ -2463,7 +2838,7 @@
 									"pm.variables.set(\"request_timestamp\", new Date().toISOString().slice(0, 19)+\"Z\");",
 									"",
 									"function generateSignature() {",
-									"    var invoiceNumber = 'INV-123123-12313'; // Replace this with the Invoice Number or Request-Id as the query params",
+									"    var invoiceNumber = 'INV-1640746942'; // Replace this with the Invoice Number or Request-Id as the query params",
 									"",
 									"    var signatureComponents = 'Client-Id:' + pm.variables.get('client_id') +'\\n'+",
 									"    'Request-Id:' + pm.variables.get('request_id') +'\\n'+",
@@ -2508,7 +2883,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{url}}/orders/v1/status/INV-123123-12313",
+							"raw": "{{url}}/orders/v1/status/INV-1640746942",
 							"host": [
 								"{{url}}"
 							],
@@ -2516,7 +2891,7 @@
 								"orders",
 								"v1",
 								"status",
-								"INV-123123-12313"
+								"INV-1640746942"
 							]
 						}
 					},
@@ -2828,11 +3203,11 @@
 		},
 		{
 			"key": "client_id",
-			"value": "MCH-0059-4260793232634"
+			"value": "MCH-0003-8279340109246"
 		},
 		{
 			"key": "secret_key",
-			"value": "SK-MMGF3AZgskKJb4GFVfYm"
+			"value": "SK-7D9Lk82lxvJ2tPn18d4t"
 		},
 		{
 			"key": "request_id",
