@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "48e17bf3-5d92-463e-993a-7b8fffa6e245",
+		"_postman_id": "eedefff5-2871-4daf-ad57-02e16a88cf15",
 		"name": "Jokul API Collection",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -2724,6 +2724,80 @@
 										"akulaku-peer-to-peer",
 										"v2",
 										"refund"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Direct Transfer",
+					"item": [
+						{
+							"name": "Generate Payment Amount",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var uuid = require('uuid');",
+											"var req_id = uuid.v4();",
+											"pm.variables.set(\"request_id\", req_id);",
+											"var dateFormat = new Date().toISOString().slice(0, 19)+\"Z\";",
+											"pm.variables.set(\"request_timestamp\", dateFormat);",
+											"var targetPath = \"/bca-direct-transfer/v1/order\";",
+											"",
+											"function generatePayCodeSignature(jsonBody, key, client, req, tgl, target) {",
+											"var body = (jsonBody.raw);",
+											"var bodySha256 = CryptoJS.enc.Base64.stringify(CryptoJS.SHA256(body));",
+											"var signatureComponents = ",
+											"\"Client-Id:\"+client+\"\\n\"",
+											"+\"Request-Id:\"+req+\"\\n\"",
+											"+\"Request-Timestamp:\"+tgl+\"\\n\"",
+											"+\"Request-Target:\"+target+\"\\n\"",
+											"+\"Digest:\"+ bodySha256;",
+											"var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(signatureComponents,key));",
+											"console.log('body : \\n' + body);",
+											"console.log('Digest : '+ bodySha256);",
+											"console.log('UTC : ' +tgl);",
+											"console.log('Komponen signature : \\n' + signatureComponents);",
+											"console.log('Signature : ' + signature);",
+											"return (signature);",
+											"}",
+											"",
+											"var Header = require('postman-collection').Header",
+											"pm.request.headers.add({key : 'Signature', value :\"HMACSHA256=\"+generatePayCodeSignature(pm.request.body, pm.variables.get('secret_key'), pm.variables.get('client_id'), pm.variables.get('request_id'), dateFormat, targetPath)});",
+											"pm.request.headers.add({key : 'Request-Id', value : pm.variables.get('request_id')});",
+											"pm.request.headers.add({key : 'Client-Id', value : pm.variables.get('client_id')});",
+											"pm.request.headers.add({key : 'Request-Timestamp', value : pm.variables.get('request_timestamp')});",
+											"pm.request.headers.add({key : 'Request-Target', value : targetPath});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"order\": {\n    \"amount\": 10000,\n    \"invoice_number\": \"INV-234237\",\n    \"item_name\": \"Vario 160 Sticker\",\n    \"customer_address\": \"Jakarta Selatan\"\n  },\n  \"customer\": {\n    \"email\": \"heriyatmo@doku.com\",\n    \"name\": \"yatmo\"\n  }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}/bca-direct-transfer/v1/order",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"bca-direct-transfer",
+										"v1",
+										"order"
 									]
 								}
 							},
