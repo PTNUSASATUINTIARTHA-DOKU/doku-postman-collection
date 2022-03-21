@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "eedefff5-2871-4daf-ad57-02e16a88cf15",
+		"_postman_id": "48e17bf3-5d92-463e-993a-7b8fffa6e245",
 		"name": "Jokul API Collection",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -1666,6 +1666,89 @@
 									"response": []
 								}
 							]
+						},
+						{
+							"name": "DOKU WALLET",
+							"item": [
+								{
+									"name": "Generate Payment Page Copy",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"var uuid = require('uuid');",
+													"pm.variables.set(\"request_id\", uuid.v4());",
+													"pm.variables.set(\"request_timestamp\", new Date().toISOString().slice(0, 19)+\"Z\");",
+													"",
+													"function generateSignature(jsonBody) {",
+													"    var digestSHA256 = CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(jsonBody));",
+													"    var digestBase64 = CryptoJS.enc.Base64.stringify(digestSHA256);",
+													"    console.log('Digest Component: ' + jsonBody)",
+													"    console.log('Digest sha256: ' + digestSHA256)",
+													"    console.log('Digest: ' + digestBase64)",
+													"    var signatureComponents = 'Client-Id:' + pm.variables.get('client_id') +'\\n'+",
+													"    'Request-Id:' + pm.variables.get('request_id') +'\\n'+",
+													"    'Request-Timestamp:' + pm.variables.get('request_timestamp') + '\\n'+",
+													"    'Request-Target:/dokuwallet-emoney/v1/payment' + '\\n'+",
+													"    'Digest:' + digestBase64;",
+													"    var signatureHmacSha256 = CryptoJS.HmacSHA256(signatureComponents,pm.variables.get('secret_key'));",
+													"    var signatureBase64 = CryptoJS.enc.Base64.stringify(signatureHmacSha256);",
+													"    console.log('Signature Components: ' + signatureComponents)",
+													"    console.log('Signature HMACSHA256: ' + signatureHmacSha256)",
+													"    console.log('Signature: ' + signatureBase64)",
+													"    return 'HMACSHA256='+signatureBase64;",
+													"}",
+													"",
+													"pm.variables.set('signature', generateSignature(pm.variables.replaceIn(pm.request.body.raw)));"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Request-Id",
+												"value": "MCH-1505-1640763903116",
+												"type": "text"
+											},
+											{
+												"key": "Request-Timestamp",
+												"value": "{{iso_ts_short}}",
+												"type": "text"
+											},
+											{
+												"key": "Signature",
+												"value": "HMACSHA256={{hmac_result}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"order\": {\n        \"invoice_number\":\"{{invoice_number_generated}}\",\n        \"amount\": 9000,\n        \"line_items\": [\n            {\n                \"name\": \"T-Shirt Red\",\n                \"price\": 3000,\n                \"quantity\": 2\n            },\n            {\n                \"name\": \"Polo Navy\",\n                \"price\": 3000,\n                \"quantity\": 1\n            }\n        ],\n        \"success_url\": \"https://www.google.com/\",\n        \"failed_url\": \"https://www.kaskus.com/\",\n        \"notify_url\": \"https://merchant.com/notify-url\",\n        \"auto_redirect\": false\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{url}}/dokuwallet-emoney/v1/payment",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"dokuwallet-emoney",
+												"v1",
+												"payment"
+											]
+										}
+									},
+									"response": []
+								}
+							]
 						}
 					]
 				},
@@ -2730,80 +2813,6 @@
 							"response": []
 						}
 					]
-				},
-				{
-					"name": "Direct Transfer",
-					"item": [
-						{
-							"name": "Generate Payment Amount",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var uuid = require('uuid');",
-											"var req_id = uuid.v4();",
-											"pm.variables.set(\"request_id\", req_id);",
-											"var dateFormat = new Date().toISOString().slice(0, 19)+\"Z\";",
-											"pm.variables.set(\"request_timestamp\", dateFormat);",
-											"var targetPath = \"/bca-direct-transfer/v1/order\";",
-											"",
-											"function generatePayCodeSignature(jsonBody, key, client, req, tgl, target) {",
-											"var body = (jsonBody.raw);",
-											"var bodySha256 = CryptoJS.enc.Base64.stringify(CryptoJS.SHA256(body));",
-											"var signatureComponents = ",
-											"\"Client-Id:\"+client+\"\\n\"",
-											"+\"Request-Id:\"+req+\"\\n\"",
-											"+\"Request-Timestamp:\"+tgl+\"\\n\"",
-											"+\"Request-Target:\"+target+\"\\n\"",
-											"+\"Digest:\"+ bodySha256;",
-											"var signature = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(signatureComponents,key));",
-											"console.log('body : \\n' + body);",
-											"console.log('Digest : '+ bodySha256);",
-											"console.log('UTC : ' +tgl);",
-											"console.log('Komponen signature : \\n' + signatureComponents);",
-											"console.log('Signature : ' + signature);",
-											"return (signature);",
-											"}",
-											"",
-											"var Header = require('postman-collection').Header",
-											"pm.request.headers.add({key : 'Signature', value :\"HMACSHA256=\"+generatePayCodeSignature(pm.request.body, pm.variables.get('secret_key'), pm.variables.get('client_id'), pm.variables.get('request_id'), dateFormat, targetPath)});",
-											"pm.request.headers.add({key : 'Request-Id', value : pm.variables.get('request_id')});",
-											"pm.request.headers.add({key : 'Client-Id', value : pm.variables.get('client_id')});",
-											"pm.request.headers.add({key : 'Request-Timestamp', value : pm.variables.get('request_timestamp')});",
-											"pm.request.headers.add({key : 'Request-Target', value : targetPath});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n  \"order\": {\n    \"amount\": 10000,\n    \"invoice_number\": \"INV-234237\",\n    \"item_name\": \"Vario 160 Sticker\",\n    \"customer_address\": \"Jakarta Selatan\"\n  },\n  \"customer\": {\n    \"email\": \"heriyatmo@doku.com\",\n    \"name\": \"yatmo\"\n  }\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{url}}/bca-direct-transfer/v1/order",
-									"host": [
-										"{{url}}"
-									],
-									"path": [
-										"bca-direct-transfer",
-										"v1",
-										"order"
-									]
-								}
-							},
-							"response": []
-						}
-					]
 				}
 			],
 			"description": "Jokul Direct is a collection of REST APIs for customizing your payment flow"
@@ -2912,7 +2921,7 @@
 									"pm.variables.set(\"request_timestamp\", new Date().toISOString().slice(0, 19)+\"Z\");",
 									"",
 									"function generateSignature() {",
-									"    var invoiceNumber = 'INV-1640746942'; // Replace this with the Invoice Number or Request-Id as the query params",
+									"    var invoiceNumber = 'testinvoice'; // Replace this with the Invoice Number or Request-Id as the query params",
 									"",
 									"    var signatureComponents = 'Client-Id:' + pm.variables.get('client_id') +'\\n'+",
 									"    'Request-Id:' + pm.variables.get('request_id') +'\\n'+",
@@ -2957,15 +2966,15 @@
 							}
 						],
 						"url": {
-							"raw": "{{url}}/orders/v1/status/INV-1640746942",
+							"raw": "{{prod_url}}/orders/v1/status/testinvoice",
 							"host": [
-								"{{url}}"
+								"{{prod_url}}"
 							],
 							"path": [
 								"orders",
 								"v1",
 								"status",
-								"INV-1640746942"
+								"testinvoice"
 							]
 						}
 					},
@@ -3244,6 +3253,111 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "KAFKA TEST API CC",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"businessService\": {\n        \"service\": {\n            \"id\": \"DIRECT_DEBIT\",\n            \"name\": \"Direct Debit\"\n        },\n        \"partner\": {},\n        \"client\": {\n            \"id\": \"MCH-0003-8279340109246\",\n            \"name\": \"DOKU E2E_1\",\n            \"sharedKey\": \"SK-7D9Lk82lxvJ2tPn18d4t\",\n            \"sharedKeyEnc\": \"2CvpJlaQRwUvmvkBKwrXltu/uJsV9VlNbGHnLSSlmhk\\u003d|DEV-AA|2|1|+SoFk7oiUM4U8XpoSy5jZA\\u003d\\u003d\",\n            \"status\": \"VERIFIED\"\n        }\n    },\n    \"acquirer\": {\n        \"id\": \"BRI\",\n        \"name\": \"Bank Rakyat Indonesia\"\n    },\n    \"channel\": {\n        \"id\": \"DIRECT_DEBIT_BRI\",\n        \"name\": \"Direct Debit BRI\"\n    },\n    \"order\": {\n        \"invoiceNumber\": \"INVNUMBER_014\",\n        \"lineItems\": [\n            {\n                \"name\": \"Vitamin C\",\n                \"price\": 40000,\n                \"quantity\": 1\n            },\n            {\n                \"name\": \"Pensil Warna\",\n                \"price\": 50000,\n                \"quantity\": 1\n            }\n        ],\n        \"currency\": \"IDR\",\n        \"amount\": 90000.00,\n        \"createdDate\": \"2022-01-19T10:23:48Z\"\n    },\n    \"customer\": {\n        \"id\": \"TEST_SIMULATOR047X71\",\n        \"name\": \"TESTING-WTD\",\n        \"email\": \"wtd@mail.com\",\n        \"phone\": \"6281394130661\",\n        \"idCard\": \"6013010111348224\",\n        \"country\": \"Indonesia\",\n        \"address\": \"Jl. Menara Mulia Sekali\",\n        \"dateOfBirth\": \"01-12-1996\",\n        \"additionalInfo\": \"None\"\n    },\n    \"cardTransaction\": {\n        \"type\": \"SALE\",\n        \"requestId\": \"27677\",\n        \"cardMasked\": \"************8141\",\n        \"transactionStatus\": \"PENDING\",\n        \"date\": \"2022-01-19T10:23:48Z\",\n        \"token\": \"d561db5a7191ae96bbf89b4e638115bc\"\n    },\n    \"transaction\": {\n        \"status\": \"PENDING\",\n        \"originalRequestId\": \"27677\"\n    },\n    \"jdm\": {\n        \"uuid\": \"2238220119172348924101284458995000106156\",\n        \"divisionName\": \"PAYMENT_PLATFORM\",\n        \"departmentName\": \"WALLET_TOKEN_DEBIT\",\n        \"databaseName\": \"wtd_core\",\n        \"clientCreationTime\": \"2022-01-19T17:23:49.309\",\n        \"journeyId\": \"direct-debit-payment\",\n        \"journeyCode\": \"WTD_0001\",\n        \"journeyDesc\": \"Direct debit create payment process\"\n    },\n    \"additionalInfo\": {\n        \"message\": \"no additional info\",\n        \"test\": \"test\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://api-sit.doku.com/devex/kafka-test-api/cc",
+					"protocol": "http",
+					"host": [
+						"api-sit",
+						"doku",
+						"com"
+					],
+					"path": [
+						"devex",
+						"kafka-test-api",
+						"cc"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "NOTIF QRIS SHOPIFY",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8888/wordpress/wp-json/jokul/qrisnotification?ACQUIRER=DOKU&TXNDATE=20220202174443&ISSUERID=1673456016&ISSUERNAME=QRIS BCA&MERCHANTPAN=01&INVOICE=643&AMOUNT=3300&TXNSTATUS=S&WORDS=a50b6a02c68ba69fe481af307c9bfd39bb1fa06e&REFFERENCEID=643&TRANSACTIONID=643",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"path": [
+						"wordpress",
+						"wp-json",
+						"jokul",
+						"qrisnotification"
+					],
+					"query": [
+						{
+							"key": "ACQUIRER",
+							"value": "DOKU"
+						},
+						{
+							"key": "TXNDATE",
+							"value": "20220202174443"
+						},
+						{
+							"key": "ISSUERID",
+							"value": "1673456016"
+						},
+						{
+							"key": "ISSUERNAME",
+							"value": "QRIS BCA"
+						},
+						{
+							"key": "MERCHANTPAN",
+							"value": "01"
+						},
+						{
+							"key": "INVOICE",
+							"value": "643"
+						},
+						{
+							"key": "AMOUNT",
+							"value": "3300"
+						},
+						{
+							"key": "TXNSTATUS",
+							"value": "S"
+						},
+						{
+							"key": "WORDS",
+							"value": "a50b6a02c68ba69fe481af307c9bfd39bb1fa06e"
+						},
+						{
+							"key": "REFFERENCEID",
+							"value": "643"
+						},
+						{
+							"key": "TRANSACTIONID",
+							"value": "643"
+						}
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [
