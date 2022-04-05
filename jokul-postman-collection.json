@@ -449,10 +449,10 @@
 							]
 						},
 						{
-							"name": "Bank Mandiri Syariah VA",
+							"name": "Bank Syariah Indonesia VA",
 							"item": [
 								{
-									"name": "BSM VA - Generate Payment Code",
+									"name": "BSI VA - Generate Payment Code",
 									"event": [
 										{
 											"listen": "prerequest",
@@ -535,7 +535,7 @@
 									"response": []
 								},
 								{
-									"name": "BSM VA - Update Payment Code",
+									"name": "BSI VA - Update Payment Code",
 									"event": [
 										{
 											"listen": "prerequest",
