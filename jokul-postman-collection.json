@@ -97,6 +97,95 @@
 								"description": "| Header Parameter | Type | Description |\n| --- | --- | --- |\n| Client-Id | `string` | The Client ID you retrieved from Jokul Back Office<br>`MANDATORY` |\n| Request-Id | `string` | Random string that must unique per request for idempotency<br>`MANDATORY` `ALPHA NUMERIC` `40 chars` |\n| Request-Timestamp | `string` | Request time in ISO8601 format with UTC + 0<br>`MANDATORY` |\n| Signature | `string` | Security parameter to ensure the request's authenticity. Learn more how to generate Signature [here](https://jokul.doku.com/docs/docs/technical-references/generate-signature)<br>`MANDATORY`|"
 							},
 							"response": []
+						},
+						{
+							"name": "CC - Online Refund",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var uuid = require('uuid');",
+											"pm.variables.set(\"request_id\", uuid.v4());",
+											"pm.variables.set(\"request_timestamp\", new Date().toISOString().slice(0, 19)+\"Z\");",
+											"",
+											"function generateSignature(jsonBody) {",
+											"    var digestSHA256 = CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(jsonBody));",
+											"    var digestBase64 = CryptoJS.enc.Base64.stringify(digestSHA256);",
+											"    console.log('Digest Component: ' + jsonBody)",
+											"    console.log('Digest sha256: ' + digestSHA256)",
+											"    console.log('Digest: ' + digestBase64)",
+											"    var signatureComponents = 'Client-Id:' + pm.variables.get('client_id') +'\\n'+",
+											"    'Request-Id:' + pm.variables.get('request_id') +'\\n'+",
+											"    'Request-Timestamp:' + pm.variables.get('request_timestamp') + '\\n'+",
+											"    'Request-Target:/cancellation/credit-card/refund' + '\\n'+",
+											"    'Digest:' + digestBase64;",
+											"    var signatureHmacSha256 = CryptoJS.HmacSHA256(signatureComponents,pm.variables.get('secret_key'));",
+											"    var signatureBase64 = CryptoJS.enc.Base64.stringify(signatureHmacSha256);",
+											"    console.log('Signature Components: ' + signatureComponents)",
+											"    console.log('Signature HMACSHA256: ' + signatureHmacSha256)",
+											"    console.log('Signature: ' + signatureBase64)",
+											"    return 'HMACSHA256='+signatureBase64;",
+											"}",
+											"",
+											"pm.variables.set('signature', generateSignature(pm.variables.replaceIn(pm.request.body.raw)));"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Client-Id",
+										"value": "{{client_id}}",
+										"type": "text"
+									},
+									{
+										"key": "Request-Id",
+										"value": "{{request_id}}",
+										"type": "text"
+									},
+									{
+										"key": "Request-Timestamp",
+										"value": "{{request_timestamp}}",
+										"type": "text"
+									},
+									{
+										"key": "Signature",
+										"value": "{{signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{ \n    \"order\": {\n       \t\"invoice_number\":\"INV-{{$timestamp}}\",\n       \t\"line_items\": [\n\t\t\t{\n      \t\t\"name\": \"DOKU T-Shirt Merah\",\n      \t\t\"price\": 30000,\n      \t\t\"quantity\": 2\n    \t\t},\n\t\t\t{\n      \t\t\"name\": \"DOKU T-Shirt Biru\",\n      \t\t\"price\": 30000,\n      \t\t\"quantity\": 1\n    \t\t}\n  \t\t],\n       \t\"amount\": 90000,\n       \t\"callback_url\": \"https://doku.com\",\n       \t\"auto_redirect\": false,\n       \t\"session_id\": \"0000231223\"\n    },\n    \"customer\": {\n    \t\"id\":\"W7rbKhPYh76VSHYwHRaGDIbBhgTebgAoWtX\",\n    \t\"name\":\"Anton Budiman\",\n    \t\"email\":\"anton@doku.com\",\n    \t\"phone\":\"+6281287458232\",\n\t\t\"address\":\"Jakarta, Menara Mulia Lt 8\",\n\t\t\"country\":\"ID\"\n\t},\n    \"override_configuration\": {\n        \"themes\": {\n            \"language\": \"ID\",\n            \"background_color\": \"\",\n            \"font_color\": \"\",\n            \"button_background_color\": \"\",\n            \"button_font_color\": \"\"\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{url}}/credit-card/v1/cancellation/credit-card/refund",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"credit-card",
+										"v1",
+										"cancellation",
+										"credit-card",
+										"refund"
+									]
+								},
+								"description": "| Header Parameter | Type | Description |\n| --- | --- | --- |\n| Client-Id | `string` | The Client ID you retrieved from Jokul Back Office<br>`MANDATORY` |\n| Request-Id | `string` | Random string that must unique per request for idempotency<br>`MANDATORY` `ALPHA NUMERIC` `40 chars` |\n| Request-Timestamp | `string` | Request time in ISO8601 format with UTC + 0<br>`MANDATORY` |\n| Signature | `string` | Security parameter to ensure the request's authenticity. Learn more how to generate Signature [here](https://jokul.doku.com/docs/docs/technical-references/generate-signature)<br>`MANDATORY`|"
+							},
+							"response": []
 						}
 					]
 				},
@@ -1517,12 +1606,13 @@
 													"function check_sum(jsonBody) {\r",
 													"var body = JSON.parse(jsonBody)\r",
 													"var key = pm.variables.get(\"secret_key\");\r",
+													"var client_id = pm.variables.get(\"client_id\");\r",
 													"\r",
 													"signatureComponents = \r",
 													"body.order.amount\r",
 													"+ body.ovo_payment.approval_code\r",
 													"+ body.ovo_payment.batch_number\r",
-													"+ body.client.id\r",
+													"+ client_id\r",
 													"+ body.order.invoice_number\r",
 													"+ body.ovo_info.ovo_id\r",
 													"+ body.ovo_payment.reference_number\r",
@@ -1534,7 +1624,7 @@
 													"console.log('Signature: ' + signature)\r",
 													"return signature;\r",
 													"}\r",
-													"postman.setEnvironmentVariable('check_sum', check_sum(pm.request.body));"
+													"postman.setEnvironmentVariable('check_sum', check_sum(pm.variables.replaceIn(pm.request.body.raw)));"
 												],
 												"type": "text/javascript"
 											}
@@ -1560,7 +1650,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\r\n    \"client\": {\r\n        \"id\": \"{{client_id}}\"\r\n    },\r\n    \"order\": {\r\n   \"invoice_number\": \"INV-20210303-0012\",\r\n        \"amount\": 15000\r\n    },\r\n    \"ovo_info\": {\r\n        \"ovo_id\": \"081211111111\"\r\n    },\r\n    \"ovo_payment\": {\r\n        \"batch_number\": 500,\r\n        \"trace_number\": 3497657,\r\n        \"reference_number\": 8,\r\n        \"approval_code\": \"7410997\"\r\n    },\r\n    \"security\": {\r\n         \"check_sum\": \"{{check_sum}}\"\r\n    }\r\n}",
+											"raw": "{\r\n    \"client\": {\r\n        \"id\": \"{{client_id}}\"\r\n    },\r\n    \"order\": {\r\n   \"invoice_number\": \"INV-20210303-001234-test11\",\r\n        \"amount\": 15000\r\n    },\r\n    \"ovo_info\": {\r\n        \"ovo_id\": \"081211111111\"\r\n    },\r\n    \"ovo_payment\": {\r\n        \"batch_number\": 500,\r\n        \"trace_number\": 4451979,\r\n        \"reference_number\": 12,\r\n        \"approval_code\": \"2404983\"\r\n    },\r\n    \"security\": {\r\n         \"check_sum\": \"{{check_sum}}\"\r\n    }\r\n}",
 											"options": {
 												"raw": {
 													"language": "json"
