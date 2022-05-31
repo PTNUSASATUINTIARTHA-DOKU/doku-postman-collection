@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "cc5661b2-2044-483b-a328-244d60d56fbb",
-		"name": "Jokul API Collection Copy 4",
+		"_postman_id": "72941833-490d-43e8-a61e-497f866f2384",
+		"name": "Jokul API Collection Copy 6",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -3100,7 +3100,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"account\": {\n\t\t\"email\": \"alifiani+stan001@doku.com\",\n\t\t\"type\": \"Standard\",\n\t\t\"name\": \"Alifiani Standard 001\"\n\t}\n}",
+							"raw": "{\n\t\"account\": {\n\t\t\"email\": \"alifiani+stan001@doku.com\",\n\t\t\"type\": \"bank\",\n\t\t\"name\": \"Alifiani Standard 001\"\n\t}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3189,7 +3189,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n    \"account\": \n    { \n        \"id\":\"SAC-5933-1641483083408\" \n    }, \n    \"payout\": \n    { \n        \"amount\": 12000, \n        \"invoice_number\":\"Invoice/001/SANDBOX\" \n    }, \n    \"beneficiary\": \n    { \n        \"bank_code\":\"BNINIDJA\", \n        \"bank_account_number\": \"0577624308\", \n        \"bank_account_name\":\"Sdri Artika Julianti\" \n    }\n}",
+							"raw": "{ \n    \"account\": \n    { \n        \"id\":\"SAC-5933-1641483083409\" \n    }, \n    \"payout\": \n    { \n        \"amount\": 12000, \n        \"invoice_number\":\"Invoice/001/SANDBOX\" \n    }, \n    \"beneficiary\": \n    { \n        \"bank_code\":\"BNINIDJA\", \n        \"bank_account_number\": \"0577624308\", \n        \"bank_account_name\":\"Sdri Artika Julianti\" \n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3230,7 +3230,7 @@
 									"    var signatureComponents = 'Client-Id:' + pm.variables.get('client_id') +'\\n'+",
 									"    'Request-Id:' + pm.variables.get('request_id') +'\\n'+",
 									"    'Request-Timestamp:' + pm.variables.get('request_timestamp') + '\\n'+",
-									"    'Request-Target:/sac-merchant-api/v1/transfers' + '\\n'+",
+									"    'Request-Target:/sac-merchant/v1/transfers' + '\\n'+",
 									"    'Digest:' + digestBase64;",
 									"    var signatureHmacSha256 = CryptoJS.HmacSHA256(signatureComponents,pm.variables.get('secret_key'));",
 									"    var signatureBase64 = CryptoJS.enc.Base64.stringify(signatureHmacSha256);",
@@ -3273,7 +3273,7 @@
 							{
 								"key": "Request-Timestamp",
 								"type": "text",
-								"value": "{{reques_timestamp}}"
+								"value": "{{request_timestamp}}"
 							}
 						],
 						"body": {
@@ -3286,12 +3286,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{url}}/sac-merchant-api/v1/transfers",
+							"raw": "{{url}}/sac-merchant/v1/transfers",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
-								"sac-merchant-api",
+								"sac-merchant",
 								"v1",
 								"transfers"
 							]
@@ -3311,11 +3311,11 @@
 									"pm.variables.set(\"request_timestamp\", new Date().toISOString().slice(0, 19)+\"Z\");",
 									"",
 									"function generateSignature(jsonBody) {",
-									"    var account_id = 'SAC-8698-1628220445878' // Replace this with the Account Id as the query params",
+									"    var account_id = 'SAC-7549-1645676098163' // Replace this with the Account Id as the query params",
 									"    var signatureComponents = 'Client-Id:' + pm.variables.get('client_id') +'\\n'+",
 									"    'Request-Id:' + pm.variables.get('request_id') +'\\n'+",
 									"    'Request-Timestamp:' + pm.variables.get('request_timestamp') + '\\n'+",
-									"    'Request-Target:sac-merchant-api/v1/balances' + account_id",
+									"    'Request-Target:/sac-merchant/v1/balances/' + account_id",
 									"    var signatureHmacSha256 = CryptoJS.HmacSHA256(signatureComponents,pm.variables.get('secret_key'));",
 									"    var signatureBase64 = CryptoJS.enc.Base64.stringify(signatureHmacSha256);",
 									"    console.log('Signature Components: ' + signatureComponents)",
@@ -3343,34 +3343,34 @@
 							{
 								"key": "Client-Id",
 								"type": "text",
-								"value": "{{Client_Id}}"
+								"value": "{{client_id}}"
 							},
 							{
 								"key": "Request-Id",
 								"type": "text",
-								"value": "{{Request_Id}}"
+								"value": "{{request_id}}"
 							},
 							{
 								"key": "Signature",
 								"type": "text",
-								"value": "{{Signature}}"
+								"value": "{{signature}}"
 							},
 							{
 								"key": "Request-Timestamp",
 								"type": "text",
-								"value": "{{Request-Timestamp}}"
+								"value": "{{request_timestamp}}"
 							}
 						],
 						"url": {
-							"raw": "{{url}}/sac-merchant-api/v1/balances/SAC-8698-1628220445878",
+							"raw": "{{url}}/sac-merchant/v1/balances/SAC-7549-1645676098163",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
-								"sac-merchant-api",
+								"sac-merchant",
 								"v1",
 								"balances",
-								"SAC-8698-1628220445878"
+								"SAC-7549-1645676098163"
 							]
 						}
 					},
