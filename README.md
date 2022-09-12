@@ -1,6 +1,6 @@
-# Jokul Postman Collection
+# DOKU Postman Collection
 
-Official Postman Collection for Jokul. Visit https://jokul.doku.com for more information about the product and https://jokul.doku.com/docs for the technical documentation.
+Official Postman Collection for DOKU API. Visit https://jokul.doku.com for more information about the product and https://jokul.doku.com/docs for the technical documentation.
 
 ## Preparation
 
@@ -21,7 +21,7 @@ To get started, please import the Postman Collection:
 
 After importing the Postman Collection, you need to setup the Client ID and Secret Key to the Postman, so that you can access our APIs. Here is how to setup the credential:
 
-1. Click three dots on the Jokul API Collection folder and click Edit
+1. Click three dots on the DOKU API Collection folder and click Edit
 1. Click the Variables tab
 1. Change the `client_id` and `secret_key` value with yours
 1. Click Update button
