@@ -1,12 +1,14 @@
 {
 	"info": {
-		"_postman_id": "72941833-490d-43e8-a61e-497f866f2384",
-		"name": "Jokul API Collection Copy 6",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"_postman_id": "d7ad56ac-69a1-4a73-90e6-847341725200",
+		"name": "DOKU API Collection Copy 6",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16904076",
+		"_collection_link": "https://solar-crescent-539669.postman.co/workspace/Devex-API-Collection~270b6ad9-96fa-4826-872b-15268f85fa97/collection/16904076-d7ad56ac-69a1-4a73-90e6-847341725200?action=share&source=collection_link&creator=16904076"
 	},
 	"item": [
 		{
-			"name": "Jokul Direct",
+			"name": "DOKU Direct",
 			"item": [
 				{
 					"name": "Credit Card",
@@ -2862,13 +2864,13 @@
 					]
 				}
 			],
-			"description": "Jokul Direct is a collection of REST APIs for customizing your payment flow"
+			"description": "DOKU Direct is a collection of REST APIs for customizing your payment flow"
 		},
 		{
-			"name": "Jokul Checkout",
+			"name": "DOKU Checkout",
 			"item": [
 				{
-					"name": "Jokul Checkout - Initiate Payment",
+					"name": "DOKU Checkout - Initiate Payment",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -2951,7 +2953,7 @@
 					"response": []
 				}
 			],
-			"description": "Jokul Checkout is a Hosted Payment Page that helps you do single integration for all payment channels available."
+			"description": "DOKU Checkout is a Hosted Payment Page that helps you do single integration for all payment channels available."
 		},
 		{
 			"name": "Misc",
@@ -3030,7 +3032,7 @@
 			]
 		},
 		{
-			"name": "Jokul Sub Account",
+			"name": "DOKU Sub Account",
 			"item": [
 				{
 					"name": "Create Sub Account",
