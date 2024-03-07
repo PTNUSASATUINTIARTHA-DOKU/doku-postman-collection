@@ -1,10 +1,9 @@
 {
 	"info": {
-		"_postman_id": "5e52d3c8-b758-4254-b9c6-fcf3f84c843a",
-		"name": "DOKU API Collection Copy 6",
+		"_postman_id": "93119d90-8399-4944-a09a-446aec68ecde",
+		"name": "DOKU API Collection Copy 7",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "29502257",
-		"_collection_link": "https://martian-crescent-853249.postman.co/workspace/DOKU~bda2e921-1091-4451-a999-1240200bbb1b/collection/29502257-5e52d3c8-b758-4254-b9c6-fcf3f84c843a?action=share&source=collection_link&creator=29502257"
+		"_exporter_id": "14577350"
 	},
 	"item": [
 		{
@@ -1622,8 +1621,7 @@
 													{
 														"key": "CHANNEL-ID",
 														"value": "VA008",
-														"type": "text",
-														"description": "http://confluence.doku.com/display/GAT/SNAP+CHANNEL-ID+List"
+														"type": "text"
 													}
 												],
 												"body": {
