@@ -10516,7 +10516,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"partnerReferenceNo\": \"INV_SHOPEE_202408150001\",\n    \"amount\": {\n        \"value\": \"1000.00\",\n        \"currency\": \"IDR\"\n    },\n    \"urlParam\": [\n        {\n            \"url\": \"https://www.google.com/search?q=test-10\",\n            \"type\": \"PAY_RETURN\",\n            \"isDeepLink\": \"Y\"\n        }\n    ],\n    \"validUpTo\": \"2024-12-30T10:09:59+07:00\",\n    \"pointOfInitiation\": \"app\",\n    \"additionalInfo\": {\n        \"channel\": \"EMONEY_SHOPEE_PAY_SNAP\"\n    }\n}",
+											"raw": "{\n    \"partnerReferenceNo\": \"INV_SHOPEE_202408150001\",\n    \"amount\": {\n        \"value\": \"1000.00\",\n        \"currency\": \"IDR\"\n    },\n    \"urlParams\": [\n        {\n            \"url\": \"https://www.google.com/search?q=test-10\",\n            \"type\": \"PAY_RETURN\",\n            \"isDeepLink\": \"Y\"\n        }\n    ],\n    \"validUpTo\": \"2024-12-30T10:09:59+07:00\",\n    \"pointOfInitiation\": \"app\",\n    \"additionalInfo\": {\n        \"channel\": \"EMONEY_SHOPEE_PAY_SNAP\"\n    }\n}",
 											"options": {
 												"raw": {
 													"language": "json"
