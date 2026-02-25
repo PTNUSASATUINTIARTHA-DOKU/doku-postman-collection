@@ -9006,7 +9006,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\r\n    \"tokenId\": \"eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2OTMyODExMjksImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA3LTE2NjkyNzMwNjQ2MjAiLCJhY2NvdW50SWQiOiI2OGEwZWY3NTZlY2JhZTI4MDYwN2ZlOTYzMzY0NzFiMSJ9.sd72CBLaum8dn8CNRqmtsgQdjMQ8_yLZ4Xbj9AYbJQ0\",\r\n    \"additionalInfo\": {\r\n        \"channel\": \"DIRECT_DEBIT_BRI_SNAP\"\r\n    }\r\n}",
+											"raw": "{\r\n    \"token\": \"eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2OTMyODExMjksImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjA3LTE2NjkyNzMwNjQ2MjAiLCJhY2NvdW50SWQiOiI2OGEwZWY3NTZlY2JhZTI4MDYwN2ZlOTYzMzY0NzFiMSJ9.sd72CBLaum8dn8CNRqmtsgQdjMQ8_yLZ4Xbj9AYbJQ0\",\r\n    \"additionalInfo\": {\r\n        \"channel\": \"DIRECT_DEBIT_BRI_SNAP\"\r\n    }\r\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -10013,7 +10013,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\r\n    \"tokenId\": \"eyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjQzODM5MDQsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjAyLTE2OTAyNzUzNTM3OTgiLCJhY2NvdW50SWQiOiIyYWMxNWRhMmE1MWU5MzNkMmVjZTYyYmQ4MGVjMDdjOCJ9.eVn3ofvjrCXghWayAgUnkqM8JPelPmcJZVeL11xKUaAVUaX2yvWHSNBly1w5K__Xk5-FzdvU4uXNtEYyyW2RdaLxK-BugRF_LsS4cLh6_es5YmlY8Xg0Y0LRp9Rk4UT_pFO6i5KDn48sItPMt40VwJkdLPTjIyG7SQUk2fXxStrdEpfp85N3tpBRFxPk2h0NUPyMahIJSINMdQ9FPnj7PlwQAoF1FJeYGtqG16e1XPM6OdjEW3seAwuU8lSGhO7fQ0YCjYoEsYadyQg4apbjv10-3VpudaDvKcWflVeFqIki10TGURv6bDvoqw04MOKp4pmHrdXN8Gw8sbSU1dmTcw\",\r\n    \"additionalInfo\": {\r\n        \"channel\": \"DIRECT_DEBIT_MANDIRI_SNAP\"\r\n    }\r\n}",
+											"raw": "{\r\n    \"token\": \"eyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MjQzODM5MDQsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjAyLTE2OTAyNzUzNTM3OTgiLCJhY2NvdW50SWQiOiIyYWMxNWRhMmE1MWU5MzNkMmVjZTYyYmQ4MGVjMDdjOCJ9.eVn3ofvjrCXghWayAgUnkqM8JPelPmcJZVeL11xKUaAVUaX2yvWHSNBly1w5K__Xk5-FzdvU4uXNtEYyyW2RdaLxK-BugRF_LsS4cLh6_es5YmlY8Xg0Y0LRp9Rk4UT_pFO6i5KDn48sItPMt40VwJkdLPTjIyG7SQUk2fXxStrdEpfp85N3tpBRFxPk2h0NUPyMahIJSINMdQ9FPnj7PlwQAoF1FJeYGtqG16e1XPM6OdjEW3seAwuU8lSGhO7fQ0YCjYoEsYadyQg4apbjv10-3VpudaDvKcWflVeFqIki10TGURv6bDvoqw04MOKp4pmHrdXN8Gw8sbSU1dmTcw\",\r\n    \"additionalInfo\": {\r\n        \"channel\": \"DIRECT_DEBIT_MANDIRI_SNAP\"\r\n    }\r\n}",
 											"options": {
 												"raw": {
 													"language": "json"
