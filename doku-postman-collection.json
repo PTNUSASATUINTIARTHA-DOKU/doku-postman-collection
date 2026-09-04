@@ -13562,6 +13562,1112 @@
                 "description": "Generated from cURL: curl --location 'https://api-uat.doku.com/sub-account/v2.0/split-rules' \\\n--header 'X-PARTNER-ID: BRN-0006-1686721107001' \\\n--header 'X-EXTERNAL-ID: RID_S_1772778878901' \\\n--header 'X-TIMESTAMP: 2026-03-06T13:34:38+07:00' \\\n--header 'X-SIGNATURE: +EC+Onnr5Filf7lWs4Jy+zxO0/FjBhwvH0IY0xuJrcweHE668mpndgKtrkgvLXqQHsHbeABUUIY6YuN54p9UDw==' \\\n--header 'Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3NzE5ODU5ODUsImlzcyI6IkRPS1UiLCJjbGllbnRJZCI6IkJSTi0wMjAyLTE3NzAzNzQ4NjI4NDcifQ.CxqAiW4nAeRLP9DgC66dLMEiiubvdJmnjZoOi2xiRqrO9OWx9i5dDi2Bb3K1YVM0Y4t-WMO_ZYTi4Cw8xjsCIhHG3dnXgw5t289yznAUGlEazw9ecz_JoS2AVxmVXmnTNH4uKVgNr3w4h4TQoJVKAEOowcfFp20YwJZkjWVeo-FwM5nh-3fI_dZHVhtklTxUdme5ga32bAG6Rp3j8CQv228BaG4Iv3CFv5nVRVCY2fpQ6s40Tsl5UczbE0AqgZmRPI0Q-7yAmOqdyqf9xK4eWjfPG1xLDkHNsZuwKAnNWozcl4wqpcd-of7vG55WERtk4dZgrzf7q6_BAhfLLsQJxQ' \\\n--header 'CHANNEL-ID: H2H' \\\n--header 'Content-Type: application/json' \\\n--data '{\n    \"transactionType\": \"PAYMENT\",\n    \"rules\": [\n        {\n            \"type\": \"FLAT\",\n            \"value\": \"2000.56\",\n            \"currency\": \"IDR\",\n            \"accountNumber\": \"2010034029\"\n        },\n        {\n            \"type\": \"PERCENTAGE\",\n            \"value\": \"30.12\",\n            \"currency\": \"IDR\",\n            \"accountNumber\": \"2010034078\"\n        }\n    ]\n}"
               },
               "response": []
+            },
+            {
+              "name": "Point Topup - Transfer Inquiry",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var CryptoJS = require(\"crypto-js\");",
+                      "var moment = require(\"moment\");",
+                      "var navigator = {}; //fake a navigator object for the lib",
+                      "var window = {}; //fake a window object for the lib",
+                      "eval(pm.globals.get(\"jsrsasign-js\")); //import javascript jsrsasign",
+                      "",
+                      "const date = new Date().toISOString();",
+                      "const timestamp = moment(date).format('YYYY-MM-DDTHH:mm:ssZ');",
+                      "const uniqueId = moment(date).format(\"yyyyMMDDHHmmssSSS\");",
+                      "const externalId = \"RID_\" + uniqueId;",
+                      "const invoiceNumber = \"INV_\" + uniqueId; ",
+                      "",
+                      "const clientId = pm.collectionVariables.get(\"client_id\");",
+                      "const secretKey = pm.collectionVariables.get(\"secret_key\");",
+                      "",
+                      "pm.collectionVariables.set(\"x_external_id\", externalId);",
+                      "pm.collectionVariables.set(\"x_timestamp\", timestamp);",
+                      "pm.collectionVariables.set(\"x_client_key\", clientId);",
+                      "",
+                      "pm.collectionVariables.set(\"invoice_number\", invoiceNumber);",
+                      "pm.collectionVariables.set(\"expired_date\", moment().add(1, 'hour').format());",
+                      "",
+                      "",
+                      "const bin = pm.collectionVariables.get(\"bni_dgpc_bin\");",
+                      "const acquirerBinLength = 6; // please adjust the length based on acquirer BIN Rules",
+                      "generatePartnerServiceId(bin, acquirerBinLength);",
+                      "",
+                      "function generatePartnerServiceId(bin, acquirerBinLength) {",
+                      "    let partnerServiceId = bin.trim();",
+                      "    if (bin.length < 8) {",
+                      "        partnerServiceId = partnerServiceId.substring(0, acquirerBinLength).padStart(8, ' ');",
+                      "    } else {",
+                      "        partnerServiceId = partnerServiceId.substring(0, 8);",
+                      "    }",
+                      "    pm.collectionVariables.set(\"partner_service_id\", partnerServiceId);",
+                      "}",
+                      "",
+                      "",
+                      "signRequest(pm.request);",
+                      "",
+                      "function createSignature(rawData, secretKey){",
+                      "    let signatureUtf8 = CryptoJS.enc.Utf8.parse(rawData);",
+                      "    var secretUtf8 = CryptoJS.enc.Utf8.parse(secretKey);",
+                      "    console.log(\"secretKey: \" + secretKey);",
+                      "    var signatureBytes = CryptoJS.HmacSHA512(signatureUtf8,secretUtf8);",
+                      "    var requestSignatureBase64String = CryptoJS.enc.Base64.stringify(signatureBytes);",
+                      "    return requestSignatureBase64String;",
+                      "}",
+                      "",
+                      "function signRequest(request) {",
+                      "",
+                      "    const method = pm.request.method;",
+                      "    const path = pm.request.url.getPath();",
+                      "    let body = pm.request.body.raw;",
+                      "    body = body",
+                      "        .replace(\"{{partner_service_id}}\", pm.collectionVariables.get(\"partner_service_id\"))",
+                      "        .replace(\"{{invoice_number}}\", pm.collectionVariables.get(\"invoice_number\"))",
+                      "        .replace(\"{{expired_date}}\", pm.collectionVariables.get(\"expired_date\"));",
+                      "    const accessToken = pm.globals.get(\"snap_access_token_merchant\");",
+                      "    ",
+                      "    var jsonObject = JSON.parse(body);",
+                      "    var minifyJsonObject = JSON.stringify(jsonObject, null, 0)",
+                      "    console.log('minifyJsonObject: ' + minifyJsonObject);",
+                      "    const bodySha256 = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(minifyJsonObject)).toLowerCase();",
+                      "",
+                      "    const data = `${method}:${path}:${accessToken}:${bodySha256}:${timestamp}`",
+                      "    console.log('stringtosign: ' + data);",
+                      "",
+                      "    var signatureHash = createSignature(data, secretKey);    ",
+                      "    pm.collectionVariables.set(\"x_signature\", signatureHash);",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-PARTNER-ID",
+                    "value": "{{x_client_key}}"
+                  },
+                  {
+                    "key": "X-TIMESTAMP",
+                    "value": "{{x_timestamp}}"
+                  },
+                  {
+                    "key": "X-SIGNATURE",
+                    "value": "{{x_signature}}"
+                  },
+                  {
+                    "key": "X-EXTERNAL-ID",
+                    "value": "{{x_external_id}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{snap_access_token_merchant}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"partnerReferenceNo\": \"{{invoice_number}}\",\n    \"type\": \"DOKU_NON_FIAT\",\n    \"amount\": {\n        \"value\": \"1000.00\",\n        \"currency\": \"POINT\"\n    },\n    \"channel\": \"BI_FAST\",\n    \"beneficiaryAccountNumber\": \"2020144370\",\n    \"remark\": \"Point topup\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{prod_url}}/sub-account/v2.0/transfer-inquiry",
+                  "host": [
+                    "{{prod_url}}"
+                  ],
+                  "path": [
+                    "sub-account",
+                    "v2.0",
+                    "transfer-inquiry"
+                  ]
+                },
+                "description": "Generated from cURL: curl --location --request POST 'https://app-uat.doku.com/sub-account/v2.0/transfer-inquiry' \\\n--header 'X-PARTNER-ID;' \\\n--header 'X-TIMESTAMP;' \\\n--header 'X-SIGNATURE;' \\\n--header 'X-EXTERNAL-ID;' \\\n--header 'Authorization;' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n    \"partnerReferenceNo\": \"2020102900000000000001\",\n    \"amount\": {\n        \"value\": \"20000.00\",\n        \"currency\": \"IDR\"\n    },\n    \"type\": \"BANK_ACCOUNT\",\n    \"channel\": \"BI_FAST\",\n    \"fromAccount\": \"1234567890\",\n    \"beneficiaryBankCode\": \"123\",\n    \"beneficiaryAccountNumber\": \"18520102416246\",\n    \"remark\": \"Transfer remarks length should be same with BMS\"\n}'"
+              },
+              "response": []
+            },
+            {
+              "name": "Point Topup - Transfer Payment",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var CryptoJS = require(\"crypto-js\");",
+                      "var moment = require(\"moment\");",
+                      "var navigator = {}; //fake a navigator object for the lib",
+                      "var window = {}; //fake a window object for the lib",
+                      "eval(pm.globals.get(\"jsrsasign-js\")); //import javascript jsrsasign",
+                      "",
+                      "const date = new Date().toISOString();",
+                      "const timestamp = moment(date).format('YYYY-MM-DDTHH:mm:ssZ');",
+                      "const uniqueId = moment(date).format(\"yyyyMMDDHHmmssSSS\");",
+                      "const externalId = \"RID_\" + uniqueId;",
+                      "const invoiceNumber = \"INV_\" + uniqueId; ",
+                      "",
+                      "const clientId = pm.collectionVariables.get(\"client_id\");",
+                      "const secretKey = pm.collectionVariables.get(\"secret_key\");",
+                      "",
+                      "pm.collectionVariables.set(\"x_external_id\", externalId);",
+                      "pm.collectionVariables.set(\"x_timestamp\", timestamp);",
+                      "pm.collectionVariables.set(\"x_client_key\", clientId);",
+                      "",
+                      "pm.collectionVariables.set(\"invoice_number\", invoiceNumber);",
+                      "pm.collectionVariables.set(\"expired_date\", moment().add(1, 'hour').format());",
+                      "",
+                      "",
+                      "const bin = pm.collectionVariables.get(\"bni_dgpc_bin\");",
+                      "const acquirerBinLength = 6; // please adjust the length based on acquirer BIN Rules",
+                      "generatePartnerServiceId(bin, acquirerBinLength);",
+                      "",
+                      "function generatePartnerServiceId(bin, acquirerBinLength) {",
+                      "    let partnerServiceId = bin.trim();",
+                      "    if (bin.length < 8) {",
+                      "        partnerServiceId = partnerServiceId.substring(0, acquirerBinLength).padStart(8, ' ');",
+                      "    } else {",
+                      "        partnerServiceId = partnerServiceId.substring(0, 8);",
+                      "    }",
+                      "    pm.collectionVariables.set(\"partner_service_id\", partnerServiceId);",
+                      "}",
+                      "",
+                      "",
+                      "signRequest(pm.request);",
+                      "",
+                      "function createSignature(rawData, secretKey){",
+                      "    let signatureUtf8 = CryptoJS.enc.Utf8.parse(rawData);",
+                      "    var secretUtf8 = CryptoJS.enc.Utf8.parse(secretKey);",
+                      "    console.log(\"secretKey: \" + secretKey);",
+                      "    var signatureBytes = CryptoJS.HmacSHA512(signatureUtf8,secretUtf8);",
+                      "    var requestSignatureBase64String = CryptoJS.enc.Base64.stringify(signatureBytes);",
+                      "    return requestSignatureBase64String;",
+                      "}",
+                      "",
+                      "function signRequest(request) {",
+                      "",
+                      "    const method = pm.request.method;",
+                      "    const path = pm.request.url.getPath();",
+                      "    let body = pm.request.body.raw;",
+                      "    body = body",
+                      "        .replace(\"{{partner_service_id}}\", pm.collectionVariables.get(\"partner_service_id\"))",
+                      "        .replace(\"{{invoice_number}}\", pm.collectionVariables.get(\"invoice_number\"))",
+                      "        .replace(\"{{expired_date}}\", pm.collectionVariables.get(\"expired_date\"));",
+                      "    const accessToken = pm.globals.get(\"snap_access_token_merchant\");",
+                      "    ",
+                      "    var jsonObject = JSON.parse(body);",
+                      "    var minifyJsonObject = JSON.stringify(jsonObject, null, 0)",
+                      "    console.log('minifyJsonObject: ' + minifyJsonObject);",
+                      "    const bodySha256 = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(minifyJsonObject)).toLowerCase();",
+                      "",
+                      "    const data = `${method}:${path}:${accessToken}:${bodySha256}:${timestamp}`",
+                      "    console.log('stringtosign: ' + data);",
+                      "",
+                      "    var signatureHash = createSignature(data, secretKey);    ",
+                      "    pm.collectionVariables.set(\"x_signature\", signatureHash);",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-PARTNER-ID",
+                    "value": "{{x_client_key}}"
+                  },
+                  {
+                    "key": "X-TIMESTAMP",
+                    "value": "{{x_timestamp}}"
+                  },
+                  {
+                    "key": "X-SIGNATURE",
+                    "value": "{{x_signature}}"
+                  },
+                  {
+                    "key": "X-EXTERNAL-ID",
+                    "value": "{{x_external_id}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{snap_access_token_merchant}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"partnerReferenceNo\": \"INV_20260904090805848\",\n    \"referenceNo\": \"f56bc695ded84aeea603d82dca0117b2\",\n    \"type\": \"DOKU_NON_FIAT\",\n    \"channel\": \"BI_FAST\",\n    \"amount\": {\n        \"value\": \"1000.00\",\n        \"currency\": \"POINT\"\n    },\n    \"beneficiaryBankCode\": \"\",\n    \"beneficiaryAccountNumber\": \"2020144370\",\n    \"fromAccount\": \"8000000052\",\n    \"beneficiaryAccountName\": \"Point Test Agent 1\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{prod_url}}/sub-account/v2.0/transfer-payment",
+                  "host": [
+                    "{{prod_url}}"
+                  ],
+                  "path": [
+                    "sub-account",
+                    "v2.0",
+                    "transfer-payment"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Void Topup",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var CryptoJS = require(\"crypto-js\");",
+                      "var moment = require(\"moment\");",
+                      "var navigator = {}; //fake a navigator object for the lib",
+                      "var window = {}; //fake a window object for the lib",
+                      "eval(pm.globals.get(\"jsrsasign-js\")); //import javascript jsrsasign",
+                      "",
+                      "const date = new Date().toISOString();",
+                      "const timestamp = moment(date).format('YYYY-MM-DDTHH:mm:ssZ');",
+                      "const uniqueId = moment(date).format(\"yyyyMMDDHHmmssSSS\");",
+                      "const externalId = \"RID_\" + uniqueId;",
+                      "const invoiceNumber = \"INV_\" + uniqueId; ",
+                      "",
+                      "const clientId = pm.collectionVariables.get(\"client_id\");",
+                      "const secretKey = pm.collectionVariables.get(\"secret_key\");",
+                      "",
+                      "pm.collectionVariables.set(\"x_external_id\", externalId);",
+                      "pm.collectionVariables.set(\"x_timestamp\", timestamp);",
+                      "pm.collectionVariables.set(\"x_client_key\", clientId);",
+                      "",
+                      "pm.collectionVariables.set(\"invoice_number\", invoiceNumber);",
+                      "pm.collectionVariables.set(\"expired_date\", moment().add(1, 'hour').format());",
+                      "",
+                      "",
+                      "const bin = pm.collectionVariables.get(\"bni_dgpc_bin\");",
+                      "const acquirerBinLength = 6; // please adjust the length based on acquirer BIN Rules",
+                      "generatePartnerServiceId(bin, acquirerBinLength);",
+                      "",
+                      "function generatePartnerServiceId(bin, acquirerBinLength) {",
+                      "    let partnerServiceId = bin.trim();",
+                      "    if (bin.length < 8) {",
+                      "        partnerServiceId = partnerServiceId.substring(0, acquirerBinLength).padStart(8, ' ');",
+                      "    } else {",
+                      "        partnerServiceId = partnerServiceId.substring(0, 8);",
+                      "    }",
+                      "    pm.collectionVariables.set(\"partner_service_id\", partnerServiceId);",
+                      "}",
+                      "",
+                      "",
+                      "signRequest(pm.request);",
+                      "",
+                      "function createSignature(rawData, secretKey){",
+                      "    let signatureUtf8 = CryptoJS.enc.Utf8.parse(rawData);",
+                      "    var secretUtf8 = CryptoJS.enc.Utf8.parse(secretKey);",
+                      "    console.log(\"secretKey: \" + secretKey);",
+                      "    var signatureBytes = CryptoJS.HmacSHA512(signatureUtf8,secretUtf8);",
+                      "    var requestSignatureBase64String = CryptoJS.enc.Base64.stringify(signatureBytes);",
+                      "    return requestSignatureBase64String;",
+                      "}",
+                      "",
+                      "function signRequest(request) {",
+                      "",
+                      "    const method = pm.request.method;",
+                      "    const path = pm.request.url.getPath();",
+                      "    let body = pm.request.body.raw;",
+                      "    body = body",
+                      "        .replace(\"{{partner_service_id}}\", pm.collectionVariables.get(\"partner_service_id\"))",
+                      "        .replace(\"{{invoice_number}}\", pm.collectionVariables.get(\"invoice_number\"))",
+                      "        .replace(\"{{expired_date}}\", pm.collectionVariables.get(\"expired_date\"));",
+                      "    const accessToken = pm.globals.get(\"snap_access_token_merchant\");",
+                      "    ",
+                      "    var jsonObject = JSON.parse(body);",
+                      "    var minifyJsonObject = JSON.stringify(jsonObject, null, 0)",
+                      "    console.log('minifyJsonObject: ' + minifyJsonObject);",
+                      "    const bodySha256 = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(minifyJsonObject)).toLowerCase();",
+                      "",
+                      "    const data = `${method}:${path}:${accessToken}:${bodySha256}:${timestamp}`",
+                      "    console.log('stringtosign: ' + data);",
+                      "",
+                      "    var signatureHash = createSignature(data, secretKey);    ",
+                      "    pm.collectionVariables.set(\"x_signature\", signatureHash);",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "let success = true;",
+                      "",
+                      "try {",
+                      "    tests[\"Response has responseCode.\"] = responseBody.has(\"responseCode\");",
+                      "    const responseData = JSON.parse(responseBody);",
+                      "",
+                      "    const responseCode = responseData.responseCode;",
+                      "    tests[\"Response has responseCode = 2005700.\"] = responseCode === '2005700';",
+                      "}",
+                      "catch(error) {",
+                      "    success = false;",
+                      "    console.log(\"Error: \" + JSON.stringify(error));",
+                      "}",
+                      "",
+                      "tests[\"Test successfully done.\"] = success;",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-PARTNER-ID",
+                    "value": "{{x_client_key}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-EXTERNAL-ID",
+                    "value": "{{x_external_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-TIMESTAMP",
+                    "value": "{{x_timestamp}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-SIGNATURE",
+                    "value": "{{x_signature}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{snap_access_token_merchant}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"partnerReferenceNo\": \"{{invoice_number}}\",\n    \"originalPartnerReferenceNo\": \"INV_20260904090805848\",\n    \"originalReferenceNo\": \"f56bc695ded84aeea603d82dca0117b2\",\n    \"transactionType\": \"VOID_TOPUP\",\n    \"voidAmount\": {\n        \"value\": \"1000.00\",\n        \"currency\": \"POINT\"\n    },\n    \"reason\": \"Top-up issued to the wrong agent\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{prod_url}}/sub-account/v2.0/topup/void",
+                  "host": [
+                    "{{prod_url}}"
+                  ],
+                  "path": [
+                    "sub-account",
+                    "v2.0",
+                    "topup",
+                    "void"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Point Purchase",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var CryptoJS = require(\"crypto-js\");",
+                      "var moment = require(\"moment\");",
+                      "var navigator = {}; //fake a navigator object for the lib",
+                      "var window = {}; //fake a window object for the lib",
+                      "eval(pm.globals.get(\"jsrsasign-js\")); //import javascript jsrsasign",
+                      "",
+                      "const date = new Date().toISOString();",
+                      "const timestamp = moment(date).format('YYYY-MM-DDTHH:mm:ssZ');",
+                      "const uniqueId = moment(date).format(\"yyyyMMDDHHmmssSSS\");",
+                      "const externalId = \"RID_\" + uniqueId;",
+                      "const invoiceNumber = \"INV_\" + uniqueId; ",
+                      "",
+                      "const clientId = pm.collectionVariables.get(\"client_id\");",
+                      "const secretKey = pm.collectionVariables.get(\"secret_key\");",
+                      "",
+                      "pm.collectionVariables.set(\"x_external_id\", externalId);",
+                      "pm.collectionVariables.set(\"x_timestamp\", timestamp);",
+                      "pm.collectionVariables.set(\"x_client_key\", clientId);",
+                      "",
+                      "pm.collectionVariables.set(\"invoice_number\", invoiceNumber);",
+                      "pm.collectionVariables.set(\"expired_date\", moment().add(1, 'hour').format());",
+                      "",
+                      "",
+                      "const bin = pm.collectionVariables.get(\"bni_dgpc_bin\");",
+                      "const acquirerBinLength = 6; // please adjust the length based on acquirer BIN Rules",
+                      "generatePartnerServiceId(bin, acquirerBinLength);",
+                      "",
+                      "function generatePartnerServiceId(bin, acquirerBinLength) {",
+                      "    let partnerServiceId = bin.trim();",
+                      "    if (bin.length < 8) {",
+                      "        partnerServiceId = partnerServiceId.substring(0, acquirerBinLength).padStart(8, ' ');",
+                      "    } else {",
+                      "        partnerServiceId = partnerServiceId.substring(0, 8);",
+                      "    }",
+                      "    pm.collectionVariables.set(\"partner_service_id\", partnerServiceId);",
+                      "}",
+                      "",
+                      "",
+                      "signRequest(pm.request);",
+                      "",
+                      "function createSignature(rawData, secretKey){",
+                      "    let signatureUtf8 = CryptoJS.enc.Utf8.parse(rawData);",
+                      "    var secretUtf8 = CryptoJS.enc.Utf8.parse(secretKey);",
+                      "    console.log(\"secretKey: \" + secretKey);",
+                      "    var signatureBytes = CryptoJS.HmacSHA512(signatureUtf8,secretUtf8);",
+                      "    var requestSignatureBase64String = CryptoJS.enc.Base64.stringify(signatureBytes);",
+                      "    return requestSignatureBase64String;",
+                      "}",
+                      "",
+                      "function signRequest(request) {",
+                      "",
+                      "    const method = pm.request.method;",
+                      "    const path = pm.request.url.getPath();",
+                      "    let body = pm.request.body.raw;",
+                      "    body = body",
+                      "        .replace(\"{{partner_service_id}}\", pm.collectionVariables.get(\"partner_service_id\"))",
+                      "        .replace(\"{{invoice_number}}\", pm.collectionVariables.get(\"invoice_number\"))",
+                      "        .replace(\"{{expired_date}}\", pm.collectionVariables.get(\"expired_date\"));",
+                      "    const accessToken = pm.globals.get(\"snap_access_token_merchant\");",
+                      "    ",
+                      "    var jsonObject = JSON.parse(body);",
+                      "    var minifyJsonObject = JSON.stringify(jsonObject, null, 0)",
+                      "    console.log('minifyJsonObject: ' + minifyJsonObject);",
+                      "    const bodySha256 = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(minifyJsonObject)).toLowerCase();",
+                      "",
+                      "    const data = `${method}:${path}:${accessToken}:${bodySha256}:${timestamp}`",
+                      "    console.log('stringtosign: ' + data);",
+                      "",
+                      "    var signatureHash = createSignature(data, secretKey);    ",
+                      "    pm.collectionVariables.set(\"x_signature\", signatureHash);",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "var CryptoJS = require(\"crypto-js\");",
+                      "var moment = require(\"moment\");",
+                      "var navigator = {}; //fake a navigator object for the lib",
+                      "var window = {}; //fake a window object for the lib",
+                      "eval(pm.globals.get(\"jsrsasign-js\")); //import javascript jsrsasign",
+                      "",
+                      "const date = new Date().toISOString();",
+                      "const timestamp = moment(date).format('YYYY-MM-DDTHH:mm:ssZ');",
+                      "const uniqueId = moment(date).format(\"yyyyMMDDHHmmssSSS\");",
+                      "const externalId = \"RID_\" + uniqueId;",
+                      "const invoiceNumber = \"INV_\" + uniqueId; ",
+                      "",
+                      "const clientId = pm.collectionVariables.get(\"client_id\");",
+                      "const secretKey = pm.collectionVariables.get(\"secret_key\");",
+                      "",
+                      "pm.collectionVariables.set(\"x_external_id\", externalId);",
+                      "pm.collectionVariables.set(\"x_timestamp\", timestamp);",
+                      "pm.collectionVariables.set(\"x_client_key\", clientId);",
+                      "",
+                      "pm.collectionVariables.set(\"invoice_number\", invoiceNumber);",
+                      "pm.collectionVariables.set(\"expired_date\", moment().add(1, 'hour').format());",
+                      "",
+                      "",
+                      "const bin = pm.collectionVariables.get(\"bni_dgpc_bin\");",
+                      "const acquirerBinLength = 6; // please adjust the length based on acquirer BIN Rules",
+                      "generatePartnerServiceId(bin, acquirerBinLength);",
+                      "",
+                      "function generatePartnerServiceId(bin, acquirerBinLength) {",
+                      "    let partnerServiceId = bin.trim();",
+                      "    if (bin.length < 8) {",
+                      "        partnerServiceId = partnerServiceId.substring(0, acquirerBinLength).padStart(8, ' ');",
+                      "    } else {",
+                      "        partnerServiceId = partnerServiceId.substring(0, 8);",
+                      "    }",
+                      "    pm.collectionVariables.set(\"partner_service_id\", partnerServiceId);",
+                      "}",
+                      "",
+                      "",
+                      "signRequest(pm.request);",
+                      "",
+                      "function createSignature(rawData, secretKey){",
+                      "    let signatureUtf8 = CryptoJS.enc.Utf8.parse(rawData);",
+                      "    var secretUtf8 = CryptoJS.enc.Utf8.parse(secretKey);",
+                      "    console.log(\"secretKey: \" + secretKey);",
+                      "    var signatureBytes = CryptoJS.HmacSHA512(signatureUtf8,secretUtf8);",
+                      "    var requestSignatureBase64String = CryptoJS.enc.Base64.stringify(signatureBytes);",
+                      "    return requestSignatureBase64String;",
+                      "}",
+                      "",
+                      "function signRequest(request) {",
+                      "",
+                      "    const method = pm.request.method;",
+                      "    const path = pm.request.url.getPath();",
+                      "    let body = pm.request.body.raw;",
+                      "    body = body",
+                      "        .replace(\"{{partner_service_id}}\", pm.collectionVariables.get(\"partner_service_id\"))",
+                      "        .replace(\"{{invoice_number}}\", pm.collectionVariables.get(\"invoice_number\"))",
+                      "        .replace(\"{{expired_date}}\", pm.collectionVariables.get(\"expired_date\"));",
+                      "    const accessToken = pm.globals.get(\"snap_access_token_merchant\");",
+                      "    ",
+                      "    var jsonObject = JSON.parse(body);",
+                      "    var minifyJsonObject = JSON.stringify(jsonObject, null, 0)",
+                      "    console.log('minifyJsonObject: ' + minifyJsonObject);",
+                      "    const bodySha256 = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(minifyJsonObject)).toLowerCase();",
+                      "",
+                      "    const data = `${method}:${path}:${accessToken}:${bodySha256}:${timestamp}`",
+                      "    console.log('stringtosign: ' + data);",
+                      "",
+                      "    var signatureHash = createSignature(data, secretKey);    ",
+                      "    pm.collectionVariables.set(\"x_signature\", signatureHash);",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-PARTNER-ID",
+                    "value": "{{x_client_key}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-EXTERNAL-ID",
+                    "value": "{{x_external_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-TIMESTAMP",
+                    "value": "{{x_timestamp}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-SIGNATURE",
+                    "value": "{{x_signature}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{snap_access_token_merchant}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"partnerReferenceNo\": \"{{invoice_number}}\",\n    \"fromAccount\": \"2020144370\",\n    \"transactionType\": \"PURCHASE\",\n    \"amount\": {\n        \"value\": \"500.00\",\n        \"currency\": \"POINT\"\n    },\n    \"description\": \"Point purchase\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{prod_url}}/sub-account/v2.0/debit",
+                  "host": [
+                    "{{prod_url}}"
+                  ],
+                  "path": [
+                    "sub-account",
+                    "v2.0",
+                    "debit"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Point Refund",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var CryptoJS = require(\"crypto-js\");",
+                      "var moment = require(\"moment\");",
+                      "var navigator = {}; //fake a navigator object for the lib",
+                      "var window = {}; //fake a window object for the lib",
+                      "eval(pm.globals.get(\"jsrsasign-js\")); //import javascript jsrsasign",
+                      "",
+                      "const date = new Date().toISOString();",
+                      "const timestamp = moment(date).format('YYYY-MM-DDTHH:mm:ssZ');",
+                      "const uniqueId = moment(date).format(\"yyyyMMDDHHmmssSSS\");",
+                      "const externalId = \"RID_\" + uniqueId;",
+                      "const invoiceNumber = \"INV_\" + uniqueId; ",
+                      "",
+                      "const clientId = pm.collectionVariables.get(\"client_id\");",
+                      "const secretKey = pm.collectionVariables.get(\"secret_key\");",
+                      "",
+                      "pm.collectionVariables.set(\"x_external_id\", externalId);",
+                      "pm.collectionVariables.set(\"x_timestamp\", timestamp);",
+                      "pm.collectionVariables.set(\"x_client_key\", clientId);",
+                      "",
+                      "pm.collectionVariables.set(\"invoice_number\", invoiceNumber);",
+                      "pm.collectionVariables.set(\"expired_date\", moment().add(1, 'hour').format());",
+                      "",
+                      "",
+                      "const bin = pm.collectionVariables.get(\"bni_dgpc_bin\");",
+                      "const acquirerBinLength = 6; // please adjust the length based on acquirer BIN Rules",
+                      "generatePartnerServiceId(bin, acquirerBinLength);",
+                      "",
+                      "function generatePartnerServiceId(bin, acquirerBinLength) {",
+                      "    let partnerServiceId = bin.trim();",
+                      "    if (bin.length < 8) {",
+                      "        partnerServiceId = partnerServiceId.substring(0, acquirerBinLength).padStart(8, ' ');",
+                      "    } else {",
+                      "        partnerServiceId = partnerServiceId.substring(0, 8);",
+                      "    }",
+                      "    pm.collectionVariables.set(\"partner_service_id\", partnerServiceId);",
+                      "}",
+                      "",
+                      "",
+                      "signRequest(pm.request);",
+                      "",
+                      "function createSignature(rawData, secretKey){",
+                      "    let signatureUtf8 = CryptoJS.enc.Utf8.parse(rawData);",
+                      "    var secretUtf8 = CryptoJS.enc.Utf8.parse(secretKey);",
+                      "    console.log(\"secretKey: \" + secretKey);",
+                      "    var signatureBytes = CryptoJS.HmacSHA512(signatureUtf8,secretUtf8);",
+                      "    var requestSignatureBase64String = CryptoJS.enc.Base64.stringify(signatureBytes);",
+                      "    return requestSignatureBase64String;",
+                      "}",
+                      "",
+                      "function signRequest(request) {",
+                      "",
+                      "    const method = pm.request.method;",
+                      "    const path = pm.request.url.getPath();",
+                      "    let body = pm.request.body.raw;",
+                      "    body = body",
+                      "        .replace(\"{{partner_service_id}}\", pm.collectionVariables.get(\"partner_service_id\"))",
+                      "        .replace(\"{{invoice_number}}\", pm.collectionVariables.get(\"invoice_number\"))",
+                      "        .replace(\"{{expired_date}}\", pm.collectionVariables.get(\"expired_date\"));",
+                      "    const accessToken = pm.globals.get(\"snap_access_token_merchant\");",
+                      "    ",
+                      "    var jsonObject = JSON.parse(body);",
+                      "    var minifyJsonObject = JSON.stringify(jsonObject, null, 0)",
+                      "    console.log('minifyJsonObject: ' + minifyJsonObject);",
+                      "    const bodySha256 = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(minifyJsonObject)).toLowerCase();",
+                      "",
+                      "    const data = `${method}:${path}:${accessToken}:${bodySha256}:${timestamp}`",
+                      "    console.log('stringtosign: ' + data);",
+                      "",
+                      "    var signatureHash = createSignature(data, secretKey);    ",
+                      "    pm.collectionVariables.set(\"x_signature\", signatureHash);",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "let success = true;",
+                      "",
+                      "try {",
+                      "    tests[\"Response has responseCode.\"] = responseBody.has(\"responseCode\");",
+                      "    const responseData = JSON.parse(responseBody);",
+                      "",
+                      "    const responseCode = responseData.responseCode;",
+                      "    tests[\"Response has responseCode = 2005700.\"] = responseCode === '2005700';",
+                      "}",
+                      "catch(error) {",
+                      "    success = false;",
+                      "    console.log(\"Error: \" + JSON.stringify(error));",
+                      "}",
+                      "",
+                      "tests[\"Test successfully done.\"] = success;",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-PARTNER-ID",
+                    "value": "{{x_client_key}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-EXTERNAL-ID",
+                    "value": "{{x_external_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-TIMESTAMP",
+                    "value": "{{x_timestamp}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-SIGNATURE",
+                    "value": "{{x_signature}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{snap_access_token_merchant}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"partnerReferenceNo\": \"{{invoice_number}}\",\n    \"originalPartnerReferenceNo\": \"DBT-1784790570360\",\n    \"originalReferenceNo\": \"06b2118ffe0c4bcdb8d38827e1174ecb\",\n    \"transactionType\": \"REFUND_PURCHASE\",\n    \"refundAmount\": {\n        \"value\": \"500.00\",\n        \"currency\": \"POINT\"\n    },\n    \"reason\": \"Point refund\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{prod_url}}/sub-account/v2.0/debit/cancel",
+                  "host": [
+                    "{{prod_url}}"
+                  ],
+                  "path": [
+                    "sub-account",
+                    "v2.0",
+                    "debit",
+                    "cancel"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Point P2P - Transfer Inquiry",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var CryptoJS = require(\"crypto-js\");",
+                      "var moment = require(\"moment\");",
+                      "var navigator = {}; //fake a navigator object for the lib",
+                      "var window = {}; //fake a window object for the lib",
+                      "eval(pm.globals.get(\"jsrsasign-js\")); //import javascript jsrsasign",
+                      "",
+                      "const date = new Date().toISOString();",
+                      "const timestamp = moment(date).format('YYYY-MM-DDTHH:mm:ssZ');",
+                      "const uniqueId = moment(date).format(\"yyyyMMDDHHmmssSSS\");",
+                      "const externalId = \"RID_\" + uniqueId;",
+                      "const invoiceNumber = \"INV_\" + uniqueId; ",
+                      "",
+                      "const clientId = pm.collectionVariables.get(\"client_id\");",
+                      "const secretKey = pm.collectionVariables.get(\"secret_key\");",
+                      "",
+                      "pm.collectionVariables.set(\"x_external_id\", externalId);",
+                      "pm.collectionVariables.set(\"x_timestamp\", timestamp);",
+                      "pm.collectionVariables.set(\"x_client_key\", clientId);",
+                      "",
+                      "pm.collectionVariables.set(\"invoice_number\", invoiceNumber);",
+                      "pm.collectionVariables.set(\"expired_date\", moment().add(1, 'hour').format());",
+                      "",
+                      "",
+                      "const bin = pm.collectionVariables.get(\"bni_dgpc_bin\");",
+                      "const acquirerBinLength = 6; // please adjust the length based on acquirer BIN Rules",
+                      "generatePartnerServiceId(bin, acquirerBinLength);",
+                      "",
+                      "function generatePartnerServiceId(bin, acquirerBinLength) {",
+                      "    let partnerServiceId = bin.trim();",
+                      "    if (bin.length < 8) {",
+                      "        partnerServiceId = partnerServiceId.substring(0, acquirerBinLength).padStart(8, ' ');",
+                      "    } else {",
+                      "        partnerServiceId = partnerServiceId.substring(0, 8);",
+                      "    }",
+                      "    pm.collectionVariables.set(\"partner_service_id\", partnerServiceId);",
+                      "}",
+                      "",
+                      "",
+                      "signRequest(pm.request);",
+                      "",
+                      "function createSignature(rawData, secretKey){",
+                      "    let signatureUtf8 = CryptoJS.enc.Utf8.parse(rawData);",
+                      "    var secretUtf8 = CryptoJS.enc.Utf8.parse(secretKey);",
+                      "    console.log(\"secretKey: \" + secretKey);",
+                      "    var signatureBytes = CryptoJS.HmacSHA512(signatureUtf8,secretUtf8);",
+                      "    var requestSignatureBase64String = CryptoJS.enc.Base64.stringify(signatureBytes);",
+                      "    return requestSignatureBase64String;",
+                      "}",
+                      "",
+                      "function signRequest(request) {",
+                      "",
+                      "    const method = pm.request.method;",
+                      "    const path = pm.request.url.getPath();",
+                      "    let body = pm.request.body.raw;",
+                      "    body = body",
+                      "        .replace(\"{{partner_service_id}}\", pm.collectionVariables.get(\"partner_service_id\"))",
+                      "        .replace(\"{{invoice_number}}\", pm.collectionVariables.get(\"invoice_number\"))",
+                      "        .replace(\"{{expired_date}}\", pm.collectionVariables.get(\"expired_date\"));",
+                      "    const accessToken = pm.globals.get(\"snap_access_token_merchant\");",
+                      "    ",
+                      "    var jsonObject = JSON.parse(body);",
+                      "    var minifyJsonObject = JSON.stringify(jsonObject, null, 0)",
+                      "    console.log('minifyJsonObject: ' + minifyJsonObject);",
+                      "    const bodySha256 = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(minifyJsonObject)).toLowerCase();",
+                      "",
+                      "    const data = `${method}:${path}:${accessToken}:${bodySha256}:${timestamp}`",
+                      "    console.log('stringtosign: ' + data);",
+                      "",
+                      "    var signatureHash = createSignature(data, secretKey);    ",
+                      "    pm.collectionVariables.set(\"x_signature\", signatureHash);",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-PARTNER-ID",
+                    "value": "{{x_client_key}}"
+                  },
+                  {
+                    "key": "X-TIMESTAMP",
+                    "value": "{{x_timestamp}}"
+                  },
+                  {
+                    "key": "X-SIGNATURE",
+                    "value": "{{x_signature}}"
+                  },
+                  {
+                    "key": "X-EXTERNAL-ID",
+                    "value": "{{x_external_id}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{snap_access_token_merchant}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"partnerReferenceNo\": \"{{invoice_number}}\",\n    \"type\": \"DOKU_SUB_ACCOUNT\",\n    \"amount\": {\n        \"value\": \"2000.00\",\n        \"currency\": \"POINT\"\n    },\n    \"channel\": \"BI_FAST\",\n    \"fromAccount\": \"2020144370\",\n    \"beneficiaryAccountNumber\": \"2020144396\",\n    \"remark\": \"Point P2P transfer\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{prod_url}}/sub-account/v2.0/transfer-inquiry",
+                  "host": [
+                    "{{prod_url}}"
+                  ],
+                  "path": [
+                    "sub-account",
+                    "v2.0",
+                    "transfer-inquiry"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Point P2P - Transfer Payment",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var CryptoJS = require(\"crypto-js\");",
+                      "var moment = require(\"moment\");",
+                      "var navigator = {}; //fake a navigator object for the lib",
+                      "var window = {}; //fake a window object for the lib",
+                      "eval(pm.globals.get(\"jsrsasign-js\")); //import javascript jsrsasign",
+                      "",
+                      "const date = new Date().toISOString();",
+                      "const timestamp = moment(date).format('YYYY-MM-DDTHH:mm:ssZ');",
+                      "const uniqueId = moment(date).format(\"yyyyMMDDHHmmssSSS\");",
+                      "const externalId = \"RID_\" + uniqueId;",
+                      "const invoiceNumber = \"INV_\" + uniqueId; ",
+                      "",
+                      "const clientId = pm.collectionVariables.get(\"client_id\");",
+                      "const secretKey = pm.collectionVariables.get(\"secret_key\");",
+                      "",
+                      "pm.collectionVariables.set(\"x_external_id\", externalId);",
+                      "pm.collectionVariables.set(\"x_timestamp\", timestamp);",
+                      "pm.collectionVariables.set(\"x_client_key\", clientId);",
+                      "",
+                      "pm.collectionVariables.set(\"invoice_number\", invoiceNumber);",
+                      "pm.collectionVariables.set(\"expired_date\", moment().add(1, 'hour').format());",
+                      "",
+                      "",
+                      "const bin = pm.collectionVariables.get(\"bni_dgpc_bin\");",
+                      "const acquirerBinLength = 6; // please adjust the length based on acquirer BIN Rules",
+                      "generatePartnerServiceId(bin, acquirerBinLength);",
+                      "",
+                      "function generatePartnerServiceId(bin, acquirerBinLength) {",
+                      "    let partnerServiceId = bin.trim();",
+                      "    if (bin.length < 8) {",
+                      "        partnerServiceId = partnerServiceId.substring(0, acquirerBinLength).padStart(8, ' ');",
+                      "    } else {",
+                      "        partnerServiceId = partnerServiceId.substring(0, 8);",
+                      "    }",
+                      "    pm.collectionVariables.set(\"partner_service_id\", partnerServiceId);",
+                      "}",
+                      "",
+                      "",
+                      "signRequest(pm.request);",
+                      "",
+                      "function createSignature(rawData, secretKey){",
+                      "    let signatureUtf8 = CryptoJS.enc.Utf8.parse(rawData);",
+                      "    var secretUtf8 = CryptoJS.enc.Utf8.parse(secretKey);",
+                      "    console.log(\"secretKey: \" + secretKey);",
+                      "    var signatureBytes = CryptoJS.HmacSHA512(signatureUtf8,secretUtf8);",
+                      "    var requestSignatureBase64String = CryptoJS.enc.Base64.stringify(signatureBytes);",
+                      "    return requestSignatureBase64String;",
+                      "}",
+                      "",
+                      "function signRequest(request) {",
+                      "",
+                      "    const method = pm.request.method;",
+                      "    const path = pm.request.url.getPath();",
+                      "    let body = pm.request.body.raw;",
+                      "    body = body",
+                      "        .replace(\"{{partner_service_id}}\", pm.collectionVariables.get(\"partner_service_id\"))",
+                      "        .replace(\"{{invoice_number}}\", pm.collectionVariables.get(\"invoice_number\"))",
+                      "        .replace(\"{{expired_date}}\", pm.collectionVariables.get(\"expired_date\"));",
+                      "    const accessToken = pm.globals.get(\"snap_access_token_merchant\");",
+                      "    ",
+                      "    var jsonObject = JSON.parse(body);",
+                      "    var minifyJsonObject = JSON.stringify(jsonObject, null, 0)",
+                      "    console.log('minifyJsonObject: ' + minifyJsonObject);",
+                      "    const bodySha256 = CryptoJS.enc.Hex.stringify(CryptoJS.SHA256(minifyJsonObject)).toLowerCase();",
+                      "",
+                      "    const data = `${method}:${path}:${accessToken}:${bodySha256}:${timestamp}`",
+                      "    console.log('stringtosign: ' + data);",
+                      "",
+                      "    var signatureHash = createSignature(data, secretKey);    ",
+                      "    pm.collectionVariables.set(\"x_signature\", signatureHash);",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-PARTNER-ID",
+                    "value": "{{x_client_key}}"
+                  },
+                  {
+                    "key": "X-TIMESTAMP",
+                    "value": "{{x_timestamp}}"
+                  },
+                  {
+                    "key": "X-SIGNATURE",
+                    "value": "{{x_signature}}"
+                  },
+                  {
+                    "key": "X-EXTERNAL-ID",
+                    "value": "{{x_external_id}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{snap_access_token_merchant}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"partnerReferenceNo\": \"INV_20260723141433417\",\n    \"referenceNo\": \"31154875d83f485a90865ee3527556bf\",\n    \"type\": \"DOKU_SUB_ACCOUNT\",\n    \"channel\": \"BI_FAST\",\n    \"amount\": {\n        \"value\": \"2000.00\",\n        \"currency\": \"POINT\"\n    },\n    \"beneficiaryBankCode\": \"\",\n    \"beneficiaryAccountNumber\": \"2020144396\",\n    \"fromAccount\": \"2020144370\",\n    \"beneficiaryAccountName\": \"Point Test Agent 2\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{prod_url}}/sub-account/v2.0/transfer-payment",
+                  "host": [
+                    "{{prod_url}}"
+                  ],
+                  "path": [
+                    "sub-account",
+                    "v2.0",
+                    "transfer-payment"
+                  ]
+                }
+              },
+              "response": []
             }
           ]
         },
@@ -14035,4 +15141,3 @@
       "value": ""
     }
   ]
-}
